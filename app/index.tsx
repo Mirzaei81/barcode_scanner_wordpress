@@ -1,18 +1,24 @@
 import { Text, View } from '@/components/Themed';
 import { CameraView, CameraType, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
-import {  router, useNavigation } from 'expo-router';
-import { useState,useRef,MutableRefObject, useEffect } from 'react';
-import { Button, StyleSheet, TouchableOpacity} from 'react-native';
+import { useNavigation } from 'expo-router';
+import { useState,useRef, useEffect } from 'react';
+import { Button, Platform, StyleSheet, TouchableOpacity,ScrollView,Dimensions,Vibration} from 'react-native';
+import { Image } from 'expo-image';
 import { getProductBySKU } from './utils';
-import  {writeAsStringAsync,cacheDirectory}from 'expo-file-system';
+import { Product } from './types';
+import WebView from 'react-native-webview';
+const rtlWrapper = `<div style="direction: rtl">`
+const ScreenHeight = Dimensions.get("window").height;
 
-export const  productFileUri = cacheDirectory+"product.json"
+
 export default function Home() {
   const [facing, setFacing] = useState<CameraType>('back');
+  const [product, setProduct] = useState<Product>()
+  const [attr, setAttr] = useState("")
   const [isLoading,setIsLoading] = useState<boolean>(false);
   const [permission, requestPermission] = useCameraPermissions();
-  const CameraRef:MutableRefObject<CameraView|null> = useRef(null);
   const navigation = useNavigation()
+  const scrollRef= useRef<ScrollView>(null);
   useEffect(()=>{
     setIsLoading(false)
     navigation.setOptions({
@@ -42,41 +48,73 @@ export default function Home() {
     if(!isLoading){
       setIsLoading(true)
       const barcodeId= result.data.slice(0, -6);
+      console.log(result.data.length+ "\t"+result.data,"\t",barcodeId)
       const products = await getProductBySKU(barcodeId)
-      console.log(productFileUri,cacheDirectory)
+      console.log(products)
+      Vibration.vibrate()
       if(products.length!=0){
-        await writeAsStringAsync(productFileUri,JSON.stringify(products[0]))
-        console.log("index.tsx:48\t"+Object.getOwnPropertyNames(products[0]))
-        // console.log("index.tsx:48\t"+JSON.stringify(products[0]))
-        router.push("/product")
+        setProduct(products[0])
+        const protectAttr =  product?.attributes.filter(attr=>attr.name.includes("مراقبت"))
+        if (protectAttr && protectAttr[0].options && protectAttr[0].options.length > 0) {
+          setAttr(protectAttr[0].options[0])
+        }
+        scrollRef.current?.scrollToEnd({animated:true})
       }
-      "id,name,slug,permalink,date_created,date_created_gmt,date_modified,date_modified_gmt,type,status,featured,catalog_visibility,description,short_description,sku,price,regular_price,sale_price,date_on_sale_from,date_on_sale_from_gmt,date_on_sale_to,date_on_sale_to_gmt,on_sale,purchasable,total_sales,virtual,downloadable,downloads,download_limit,download_expiry,external_url,button_text,tax_status,tax_class,manage_stock,stock_quantity,backorders,backorders_allowed,backordered,low_stock_amount,sold_individually,weight,dimensions,shipping_required,shipping_taxable,shipping_class,shipping_class_id,reviews_allowed,average_rating,rating_count,upsell_ids,cross_sell_ids,parent_id,purchase_note,categories,tags,images,attributes,default_attributes,variations,grouped_products,menu_order,price_html,related_ids,meta_data,stock_status,has_options,post_password,global_unique_id,yoast_head,yoast_head_json,brands,_links "
       setIsLoading(false)
     }
   }
 
   return (
-    <View style={styles.container}>
-      <CameraView
-        onBarcodeScanned={BarcodeCallback}
-        active={!isLoading}
-        barcodeScannerSettings={{
-        barcodeTypes:["itf14","qr"]
-      }} ref={CameraRef} style={styles.camera} facing={facing}>
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
-            <Text style={styles.text}>Flip Camera</Text>
-          </TouchableOpacity>
+
+    <ScrollView ref={scrollRef}  scrollEnabled={product!=null} style={styles.main}>
+      <View style={styles.container}>
+        <CameraView
+          onBarcodeScanned={BarcodeCallback}
+          active={!isLoading}
+          barcodeScannerSettings={{
+            barcodeTypes: ["itf14", "qr"]
+          }}  style={styles.camera} facing={facing}>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
+              <Text style={styles.text}>Flip Camera</Text>
+            </TouchableOpacity>
+          </View>
+        </CameraView>
+      </View>
+      <View style={styles.container}>
+        <Image style={styles.img} source={product?.images[0].src}></Image>
+        <Text style={styles.text}>قیمت: {product?.price}</Text>
+        <Text style={styles.text}>برند: {product?.brands[0].name}</Text>
+        <Text style={styles.text}>وزن: {product?.weight}</Text>
+        {attr == "" ? <></> : <Text style={styles.text}>{attr}</Text>}
+        <Text style={styles.text}>شناسه محصول: {product?.sku}</Text>
+        {
+          Platform.OS === 'web'
+            ? <div dangerouslySetInnerHTML={{ __html: product?.short_description! }} />
+            :
+            <View style={{ flex: 1, backgroundColor: "black", direction: "rtl" }}>
+              <WebView
+                style={styles.desc}
+                originWhitelist={["*"]}
+                textZoom={350}
+                source={{ html: rtlWrapper + product?.short_description! + "</div>" }}
+              />
+            </View>
+        }
         </View>
-      </CameraView>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  main:{
+    marginVertical:5,
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
+    height:ScreenHeight,
+
   },
   message: {
     textAlign: 'center',
@@ -102,5 +140,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'white',
   },
+  img: {
+    width: 100,
+    height: 100,
+  },
+  desc: {
+    fontWeight: 'bold',
+    fontSize: 200,
+    height: 100,
+    width: 300
+  }
 });
 
