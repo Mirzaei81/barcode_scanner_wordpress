@@ -40,7 +40,16 @@
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera"
         }
       ],
-      "expo-secure-store"
+      [
+        "expo-asset",
+        {
+          "assets": [
+            "./assets/images/Title.png"
+          ]
+        }
+      ],
+      "expo-secure-store",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true

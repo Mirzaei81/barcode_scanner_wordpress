@@ -1,6 +1,6 @@
 import { Text, View } from '@/components/Themed';
 import { CameraView, CameraType, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
-import { useNavigation } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { useState,useRef, useEffect } from 'react';
 import { Button, Platform, StyleSheet, TouchableOpacity,ScrollView,Dimensions,Vibration,Animated} from 'react-native';
 import { Image } from 'expo-image';
@@ -8,10 +8,12 @@ import { getProductBySKU } from './utils';
 import { Product } from './types';
 import WebView from 'react-native-webview';
 import BarcodeMask from "react-native-barcode-mask"
-import DomParser from   "react-native-html-parser"
-import {ActivityIndicator,Snackbar} from "react-native-paper"
+import {ActivityIndicator, Portal, Snackbar} from "react-native-paper"
 import {Icon} from "react-native-paper"
+import {writeAsStringAsync,cacheDirectory} from 'expo-file-system'
 
+
+export const productPath = cacheDirectory+"p.json"
 const rtlWrapper = `<div style="direction: rtl">`
 const colorMain = "#016bb7"
 const colorSecondary = "#016bb7"
@@ -21,12 +23,10 @@ const maskColWidth = (ScreenWidth - 300) / 2;
 
 export default function Home() {
   const [facing, setFacing] = useState<CameraType>('back');
-  const [product, setProduct] = useState<Product>()
   const [visible,setVisible] = useState(false)
-  const [attr, setAttr] = useState("")
   const [isLoading,setIsLoading] = useState<boolean>(false);
+  const [overlayVisible,setOverlayVisible] = useState<boolean>(true);
   const [permission, requestPermission] = useCameraPermissions();
-  const [desc,setDesc] = useState("")
 
 
   const navigation = useNavigation()
@@ -72,24 +72,19 @@ export default function Home() {
       const products = await getProductBySKU(barcodeId)
       console.log(products.length)
       if(products.length>0){
-        const product = products[0]
-        console.log(product)
-        const protectAttr =  product.attributes.filter(attr=>attr.name.includes("مراقبت"))
-        if (protectAttr && protectAttr[0].options && protectAttr[0].options.length > 0) {
-          setAttr(protectAttr[0].options[0])
-        }
-        setProduct(product)
+        await writeAsStringAsync(productPath,JSON.stringify(products[0]))
+        setOverlayVisible(false)
+        router.push("/product")
         // scrollRef.current?.scrollToEnd({animated:true})
       }
       else{
-        setVisible(true)
+        setTimeout(() => setVisible(true), 3000)
       }
-      setTimeout(()=>setIsLoading(false),5000)
+      setTimeout(()=>setIsLoading(false),3000)
     }
   }
 
   return (
-    <ScrollView ref={scrollRef}  scrollEnabled={product!=null} style={styles.main}>
       <View style={styles.container}>
         <CameraView
           onBarcodeScanned={BarcodeCallback}
@@ -97,13 +92,23 @@ export default function Home() {
           barcodeScannerSettings={{
             barcodeTypes: ["itf14", "qr"]
           }}  style={styles.camera} facing={facing}>
-          {/* <Snackbar
-            visible={visible}
-            style={{direction:"rtl"}}
-            onDismiss={() => setVisible(false)}>
-            محصولی پیدا نشد
-          </Snackbar> */}
-          {isLoading?<ActivityIndicator style={styles.activity} color={colorSecondary}/>:<BarcodeMask width={300} height={100} />}
+        <Portal>
+          {(()=>{
+            if (overlayVisible) {
+              return (
+                <>
+                  <Snackbar
+                    visible={visible}
+                    style={{ direction: "rtl" }}
+                    onDismiss={() => setVisible(false)}>
+                    محصولی پیدا نشد
+                  </Snackbar>
+                  {isLoading ? <ActivityIndicator style={styles.activity} color={colorMain} size={96} /> : <BarcodeMask width={300} height={100} />}
+                </>
+              )
+            }
+          })()}
+        </Portal>
           <View style={styles.buttonContainer}>
             <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
             <Icon  size={96} color="white" source="camera-flip"/>
@@ -111,35 +116,22 @@ export default function Home() {
           </View>
         </CameraView>
       </View>
-      <View style={styles.container}>
-        <Image style={styles.img} source={product?.images[0].src}></Image>
-        <Text style={styles.text}>قیمت: {product?.price}</Text>
-        <Text style={styles.text}>برند: {product?.brands[0].name}</Text>
-        <Text style={styles.text}>وزن: {product?.weight}</Text>
-        {attr == "" ? <></> : <Text style={styles.text}>{attr}</Text>}
-        <Text style={styles.text}>شناسه محصول: {product?.sku}</Text>
-        
-        </View>
-    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   main:{
-    marginVertical:5,
   },
   container: {
-    flex: 1,
     height:ScreenHeight,
     backgroundColor:colorMain,
-    alignContent:"center"
   },
   message: {
     textAlign: 'center',
     paddingBottom: 10,
   },
   camera: {
-    flex: 1,
+    height:ScreenHeight,
     justifyContent:"flex-start"
   },
   buttonContainer: {
