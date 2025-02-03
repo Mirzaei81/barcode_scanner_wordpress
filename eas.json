@@ -1,14 +1,4 @@
 {
-  "expo":{
-    "plugins":[
-      [
-        "expo-assets",
-        {
-            "assets":["./assets/images/Title.png"]
-        }
-      ]
-    ]
-  },
   "cli": {
     "version": ">= 9.1.0"
   },
