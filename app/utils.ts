@@ -5,6 +5,5 @@ export async function getProductBySKU(Sku:string):Promise<Products> {
           'Authorization': 'Basic ' + btoa(`${process.env.EXPO_PUBLIC_WOOCOMERCE_KEY}:${process.env.EXPO_PUBLIC_WOOCOMERCE_SECRET}`)
         }
       })
-    console.log(`https://${process.env.EXPO_PUBLIC_WOOCOMERCE_HOST}/wp-json/wc/v3/products?sku=${Sku}`,`${process.env.EXPO_PUBLIC_WOOCOMERCE_KEY}:${process.env.EXPO_PUBLIC_WOOCOMERCE_SECRET}`)
     return await response.json()
 }
