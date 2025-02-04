@@ -192,3 +192,15 @@ export type  Product= {
     }
   }
 export type Products = Array<Product> 
+export type ProductTable = {
+  attrbute: string|null
+  brand: string
+  stock: number
+  dimentions: string
+  id: number
+  link: string
+  name: string
+  price: number
+  short_desc: string
+  weight: number
+}

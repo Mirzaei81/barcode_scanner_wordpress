@@ -1,42 +1,52 @@
 import { Text, View } from '@/components/Themed';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { StyleSheet,Dimensions} from 'react-native';
+import { StyleSheet,Dimensions,BackHandler} from 'react-native';
 import { Image } from 'expo-image';
-import { Product } from './types';
-// @ts-ignore
-import DomParser from   "react-native-html-parser"
-import { readAsStringAsync } from 'expo-file-system';
-import { productPath } from './';
+import { ProductTable } from './types';
 import WebView from 'react-native-webview';
 import { Button } from 'react-native-paper';
 import {openBrowserAsync} from "expo-web-browser"
 import { useAssets } from 'expo-asset';
+import * as Sqlite from "expo-sqlite"
+import { getProductBySKU } from './utils';
 
-const colorMain = "#016bb7"
-const colorSecondary = "#f7d33d"
-const {height:ScreenHeight,width:ScreenWidth} = Dimensions.get("window");
+export const colorMain = "#016bb7"
+export const colorSecondary = "#f7d33d"
+export const colorDanger = "#800101"
+export const colorOnDanger = "#ffffff"
+
+const {height:ScreenHeight} = Dimensions.get("window");
 const descriptionWrapper = `<div style='border-radius: 5rem;padding-right:40;background-color:${colorSecondary};direction: rtl;font-size:54;font-weight:900;'>`
 
 export default function App() {
-  const [product, setProduct] = useState<Product>()
-  const [attr, setAttr] = useState("")
+
+  const [product, setProduct] = useState<ProductTable>()
   const [assets,error]= useAssets([require("../assets/images/Title.png")])
+  const {id}=useLocalSearchParams<{id:string}>();
 
   useEffect(()=>{
     (async()=>{
-        const product:Product = JSON.parse(await readAsStringAsync(productPath))
-        const protectAttr = product.attributes.filter(attr => attr.name.includes("مراقبت"))
-        setProduct(product)
-
-        if (protectAttr && protectAttr[0].options && protectAttr[0].options.length > 0) {
-            setAttr(protectAttr[0].options[0])
-        }
-    })()
-  },[])
+          const db = await Sqlite.openDatabaseAsync('Products.db');
+          const product: ProductTable = (await db.getFirstAsync("Select * from product_db where id = ?", id))!;
+          (async () => {
+              const products = await getProductBySKU(id)
+              if (products.length > 0) {
+                  const Updatedproduct = products[0];
+                  if (parseInt(Updatedproduct.price) != product.price) {
+                      await db?.runAsync(`update table product_db set price= ? where id = ?`, Updatedproduct.price, id)
+                  }
+                  if (Updatedproduct.stock_quantity != product.stock) {
+                      await db?.runAsync(`update table product_db set stock= ? where id = ?`, Updatedproduct.stock_quantity, id)
+                  }
+              }
+          })()
+          setProduct(product)
+      })()
+  }, [])
 
   async function goProductDetail(){
-    await openBrowserAsync(product?.permalink!);
+    await openBrowserAsync(product?.link!);
   }
 
   return (
@@ -47,23 +57,26 @@ export default function App() {
           </View>
 
           <View style={styles.row}>
-              <Text style={styles.text}>شناسه محصول </Text><Text style={styles.detail}>{product?.sku}</Text>
+              <Text style={styles.text}>شناسه محصول </Text><Text style={styles.detail}>{product?.id}</Text>
           </View>
           <View style={styles.row}>
               <Text style={styles.text}>نام </Text><Text style={styles.detail}>{product?.name}</Text>
           </View>
           <View style={styles.row}>
-              <Text style={styles.text}>قیمت </Text><Text style={styles.detail}> {product?.price}</Text>
+              <Text style={styles.text}>قیمت </Text><Text style={styles.detail}> {Intl.NumberFormat("en-us").format(product?.price!)}  تومان</Text>
           </View>
 
-          <View style={styles.row}>
-              <Text style={styles.text}>برند </Text><Text style={styles.detail}> {product?.brands[0].name}</Text>
+          <View style={[styles.row,{flexDirection:'row-reverse'}]}>
+                  <Text style={styles.text}>برند </Text><Text style={styles.detail}> {product?.brand}</Text>
+                  <Text style={styles.text}>موجودی </Text><Text style={styles.detail}> {product?.stock}</Text>
           </View>
 
-
-          <View style={styles.row}>
-              {attr == "" ? <></> : <Text style={styles.text}>{attr}</Text>}
-          </View>
+          {product?.attrbute ?
+              <View style={styles.row}>
+                  <Text style={styles.text}>{product?.attrbute}</Text>
+              </View>
+              : null 
+          }
           <View style={[styles.row,{height:170}]}>
               <View style={{backgroundColor:colorMain}}>
                   <Text style={styles.text}>معرفی</Text>
@@ -71,17 +84,18 @@ export default function App() {
               <WebView
                   style={styles.container}
                   originWhitelist={['*']}
-                  source={{ html: descriptionWrapper + product?.short_description + "</div>" }}
+                  source={{ html: descriptionWrapper + product?.short_desc + "</div>" }}
               />
           </View>
           <View style={styles.row}>
-              <Text style={styles.text}>ابعاد </Text><Text style={styles.detail}>  {product?.dimensions.height}x{product?.dimensions.width}x{product?.dimensions.length} </Text>
+              <Text style={styles.text}>ابعاد </Text><Text style={styles.detail}>  {product?.dimentions} </Text>
           </View>
           <View style={styles.row}>
               <Text style={styles.text}>وزن </Text><Text style={styles.detail}>  {product?.weight}  kg</Text>
           </View>
-          <View style={{display:"flex",alignItems:"center",backgroundColor:colorMain}}>
-              <Button labelStyle={styles.buttonLabel}  style={[styles.button, ]} onTouchStart={() => router.push("/")}>اسکن</Button>
+          <View style={{display:"flex",alignItems:"center",backgroundColor:colorMain,flexDirection:"row-reverse",justifyContent:"space-around"}}>
+              <Button labelStyle={[styles.buttonLabel,{color:"black"}]}  style={{backgroundColor:colorSecondary,width:200,borderRadius:20}} onTouchStart={() => router.push("/main")}>اسکن</Button>
+              <Button labelStyle={[styles.buttonLabel,{color:colorOnDanger}]}  style={{backgroundColor:colorDanger,width:100,borderRadius:40}} onTouchStart={() =>BackHandler.exitApp()}>خروج</Button>
           </View>
       </View>
   );
@@ -91,6 +105,11 @@ const styles = StyleSheet.create({
     main: {
         marginVertical: 5,
     },
+    fotterBtn:{
+        backgroundColor: colorSecondary,
+        borderWidth: 10,
+        width: 200,
+    },
     row: {
         flexDirection: "row-reverse",
         margin: 7,
@@ -98,6 +117,7 @@ const styles = StyleSheet.create({
     },
     header: {
         backgroundColor: colorMain,
+        marginTop:5,
         display: "flex",
         flexDirection: "row"
     },
@@ -126,18 +146,17 @@ const styles = StyleSheet.create({
         borderColor: colorSecondary,
         color: colorSecondary,
         fontFamily: "Lalezar",
-        fontSize: 20,
-        borderWidth: 10,
+        borderWidth: 8,
         width: 200,
     },
     text: {
         fontSize: 24,
         padding: 10,
-        borderRadius: 50,
+        borderRadius: 8,
         borderColor: "black",
         borderWidth: 3,
         fontWeight: 'bold',
-        fontFamily: "Lalezar",
+        fontFamily:'Lalezar',
         direction: "rtl",
         color: 'black',
         backgroundColor: colorSecondary
@@ -159,7 +178,8 @@ const styles = StyleSheet.create({
     },
     buttonLabel: {
         fontSize: 20,
-        fontFamily: "Lalezer",
+        padding:12,
+        fontFamily: 'Lalezar',
         color: colorSecondary,
     },
     detail: {
@@ -169,7 +189,7 @@ const styles = StyleSheet.create({
         verticalAlign: "middle",
         backgroundColor:colorSecondary,
         color:"black",
-        borderRadius:20,
+        borderRadius:10,
         fontSize:24
     }
 });
