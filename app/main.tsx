@@ -118,10 +118,6 @@ export default function Home() {
         <CameraView
           onBarcodeScanned={BarcodeCallback}
           active={!isLoading}
-//           barcodeScannerSettings={{
-//             // barcodeTypes: ["itf14", "qr"]
-// // 'aztec' | 'ean13' | 'ean8' | 'qr' | 'pdf417' | 'upc_e' | 'datamatrix' | 'code39' | 'code93' | 'itf14' | 'codabar' | 'code128' | 'upc_a'
-//           }}  
           style={styles.camera} facing={facing}>
         <Portal>
           {(()=>{

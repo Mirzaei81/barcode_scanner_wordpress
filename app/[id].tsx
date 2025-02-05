@@ -1,16 +1,17 @@
 import { Text, View } from '@/components/Themed';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
-import { StyleSheet, Dimensions, BackHandler, ScrollView,StatusBar } from 'react-native';
+import { StyleSheet, BackHandler, ScrollView, TouchableOpacity,Share} from 'react-native';
 import { Image } from 'expo-image';
 import { ProductTable } from './types';
 import WebView from 'react-native-webview';
-import { Button } from 'react-native-paper';
+import { Button,Icon } from 'react-native-paper';
 import { openBrowserAsync } from "expo-web-browser"
 import { useAssets } from 'expo-asset';
 import * as Sqlite from "expo-sqlite"
 import { getProductBySKU } from './utils';
 import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context"
+
 
 export const colorMain = "#016bb7"
 export const colorSecondary = "#f7d33d"
@@ -96,6 +97,9 @@ export default function App() {
                         <Text style={styles.text}>وزن </Text><Text style={styles.detail}>  {product?.weight}  kg</Text>
                     </View>
                     <View style={{ display: "flex", alignItems: "center", backgroundColor: colorMain, flexDirection: "row-reverse", justifyContent: "space-around" }}>
+                        <TouchableOpacity onPress={async()=>{await Share.share({message:product?.link!})}}>
+                            <Icon source="share" size={48} />
+                        </TouchableOpacity>
                         <Button labelStyle={[styles.buttonLabel, { color: "black" }]} style={{ backgroundColor: colorSecondary, width: 200, borderRadius: 20 }} onTouchStart={() => router.push("/main")}>اسکن</Button>
                         <Button labelStyle={[styles.buttonLabel, { color: colorOnDanger }]} style={{ backgroundColor: colorDanger, width: 100, borderRadius: 40 }} onTouchStart={() => BackHandler.exitApp()}>خروج</Button>
                     </View>
