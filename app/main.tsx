@@ -50,9 +50,9 @@ export default function Home() {
     setOverlayVisible(true)
     setIsLoading(false)
     navigation.setOptions({
-      headerShown: false 
+      headerShown: false
     })
-  },[])
+  }, [])
 
   if (!permission) {
     // Camera permissions are still loading.
@@ -74,7 +74,7 @@ export default function Home() {
   }
 
   async function BarcodeCallback(result:BarcodeScanningResult){
-    if(!isLoading){
+    if(!isLoading || true){
       Vibration.vibrate()
       setIsLoading(true)
       let barcodeId:string;
@@ -85,14 +85,11 @@ export default function Home() {
         barcodeId= result.data
       }
       const firstRow:{Count:number} = (await db?.getFirstAsync("SELECT COUNT(*) AS Count FROM product_db WHERE id = ?",barcodeId))!
-      const rows = (await db?.getAllAsync("SELECT * FROM product_db"))!
-      console.log(firstRow,rows)
       if(firstRow.Count!=0){
         setOverlayVisible(false)
         router.push(`/${barcodeId}`)
       }
       const products = await getProductBySKU(barcodeId)
-      console.log(products.length,barcodeId)
       if(products.length>0){
         const product = products[0]
         const protectAttr = product.attributes.filter(attr => attr.name.includes("مراقبت"))
@@ -100,19 +97,19 @@ export default function Home() {
         if (protectAttr.length>0 && protectAttr[0].options && protectAttr[0].options.length > 0) {
           atter = protectAttr[0].options[0]
         }
-        const dim = product.dimensions.length+"x"+product.dimensions.width+"x"+product.dimensions.height+"cm"
+        const dim = product.dimensions?.length+"x"+product.dimensions?.width+"x"+product.dimensions?.height+"cm"
 
         await db?.runAsync(`
           insert into product_db (id,name,price,brand,attrbute,short_desc,dimentions,weight,stock,link) Values (?,?,?,?,?,?,?,?,?,?)`,
-          product.sku, product.name,product.price, product.brands[0].name, atter, product.short_description, dim, product.weight,product.stock_quantity, product.permalink
+          product.sku, product.name,product.price, product.brands[0]?.name ?? "", atter, product.short_description, dim, product.weight,product.stock_quantity, product.permalink
         )
         setOverlayVisible(false)
         router.push(`/${parseInt(product.sku)}`)
       }
       else{
-        setTimeout(() => setVisible(true), 3000)
+        setTimeout(() => setVisible(true), 100)
       }
-      setTimeout(()=>setIsLoading(false),3000)
+      setTimeout(()=>setIsLoading(false),100)
     }
   }
 
@@ -121,9 +118,11 @@ export default function Home() {
         <CameraView
           onBarcodeScanned={BarcodeCallback}
           active={!isLoading}
-          barcodeScannerSettings={{
-            barcodeTypes: ["itf14", "qr"]
-          }}  style={styles.camera} facing={facing}>
+//           barcodeScannerSettings={{
+//             // barcodeTypes: ["itf14", "qr"]
+// // 'aztec' | 'ean13' | 'ean8' | 'qr' | 'pdf417' | 'upc_e' | 'datamatrix' | 'code39' | 'code93' | 'itf14' | 'codabar' | 'code128' | 'upc_a'
+//           }}  
+          style={styles.camera} facing={facing}>
         <Portal>
           {(()=>{
             if (overlayVisible) {
@@ -133,7 +132,7 @@ export default function Home() {
                     visible={visible}
                     style={{ direction: "rtl" }}
                     onDismiss={() => setVisible(false)}>
-                    محصولی پیدا نشد
+                    این محصول در سایت پیدا نشد
                   </Snackbar>
                   {isLoading ? <ActivityIndicator style={styles.activity} color={colorMain} size={96} /> : <BarcodeMask width={300} height={100} />}
                 </>
