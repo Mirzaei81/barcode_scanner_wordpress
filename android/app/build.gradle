@@ -102,7 +102,7 @@ android {
             keyPassword 'android'
         }
         release{
-            storeFile file('C:\\Users\\Mirza\\Projects\\barcodeScanner\\BarCodeScanner\\android\\my-release-key.keystore')
+            storeFile signingConfig.debug.storeFile
             storePassword '@M1r@rsh1@'
             keyAlias 'my-key-alias'
             keyPassword '@M1r@rsh1@'
