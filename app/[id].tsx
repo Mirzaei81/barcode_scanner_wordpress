@@ -13,7 +13,6 @@ import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context"
 import { FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
 import Plus from "../assets/images/add.svg"
 import Minus from "../assets/images/minus.svg"
-import Submit from "../assets/images/submit.svg"
 import Cart from "../assets/images/cart.svg"
 import Address from "../assets/images/link.svg"
 import Qr from "../assets/images/qr_blue.svg"
@@ -46,15 +45,31 @@ export default function App() {
             const db = await Sqlite.openDatabaseAsync('Products.db');
             const product: ProductTable = (await db.getFirstAsync("Select * from product where id = ?", id))!;
             (async () => {
-                const products = await getProductBySKU(id)
-                const cartDetail:{id:number,count:number}|undefined|null = await db?.getFirstAsync(`select id,count cart where  product_id= ?;`,product!.id)
-                if (products.length > 0) {
+                const products = await getProductBySKU(product.sku+"")
+                let cartDetail:{id:number,count:number}|undefined|null
+                try{
+                    cartDetail = await db?.getFirstAsync(`select * from cart where  product_id = ?;`,product!.id)
+                }catch(e){
+                    console.log(e,"get last cart value")
+                }
+                if (products&&products.length > 0) {
                     const Updatedproduct = products[0];
                     if (parseInt(Updatedproduct.price) != product.price) {
-                        await db?.runAsync(`update table product set price= ? where id = ?`, Updatedproduct.price, id)
+                        try{
+                            await db?.runAsync(`update product set price= ? where id = ?`, Updatedproduct.price, id)
+                        }catch(e){
+                            console.log(e,"at update price ")
+                        }
+                        setProduct({...product,price:product.price}) 
                     }
                     if (Updatedproduct.stock_quantity != product.stock) {
-                        await db?.runAsync(`update table product set stock= ? where id = ?`, Updatedproduct.stock_quantity, id)
+                        try{
+                            await db?.runAsync(`update product set stock= ? where id = ?`, Updatedproduct.stock_quantity, id)
+                        }catch(e){
+                            console.log(e,"at update stock")
+                        }
+                        console.log(product.stock)
+                        setProduct({...product,stock:product.stock}) 
                     }
                 }
                 if(cartDetail){
@@ -113,7 +128,9 @@ export default function App() {
                     <View style={styles.header}>
                         {/* <Button contentStyle={{ height: 70 }} mode="outlined" onTouchStart={goProductDetail} labelStyle={styles.buttonLabel} style={styles.button}>لینک محصول</Button> */}
                         {assets ? <Image source={assets[0]} style={{ width: 195, height: 80 }} /> : <></>}
-                        <FontAwesome style={{ paddingHorizontal: 20 }} color={colorSecondary} name="home" size={72} />
+                        <TouchableOpacity onPressIn={() =>  router.push("/")} >
+                            <FontAwesome  style={{ paddingHorizontal: 20 }} color={colorSecondary} name="home" size={72} />
+                        </TouchableOpacity>
                         <TouchableOpacity onPressIn={()=>BackHandler.exitApp()}  style={styles.exit}>
                             <MaterialCommunityIcons  color="#ffffffff" name="location-exit" size={48} />
                         </TouchableOpacity>
@@ -132,10 +149,10 @@ export default function App() {
                             <Text style={styles.text}>شناسه</Text><Text style={styles.detail}>{product?.id}</Text>
                         </View>
                         <View style={styles.row}>
-                            <Text style={styles.text}>ابعاد </Text><Text style={styles.detail}>  {product?.dimentions} </Text>
+                            <Text style={styles.text}>ابعاد </Text><Text style={styles.detail}>  {product?.dimentions=="xxcm"?"نامعین":product?.dimentions} </Text>
                         </View>
                         <View style={styles.row}>
-                            <Text style={styles.text}>وزن </Text><Text style={styles.detail}>  {product?.weight}  kg</Text>
+                            <Text style={styles.text}>وزن </Text><Text style={styles.detail}>  {product?.weight==0?"ناچیز":`${product?.weight} kg`} </Text>
                         </View>
                         <View style={[styles.row, { flexDirection: 'row-reverse' }]}>
                             <Text style={styles.text}>موجودی </Text><Text style={styles.detail}> {product?.stock}</Text>

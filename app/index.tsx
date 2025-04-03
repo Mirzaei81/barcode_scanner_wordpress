@@ -1,7 +1,7 @@
 import { View,Text } from "@/components/Themed";
-import { Dimensions, PixelRatio, StyleSheet } from "react-native";
-import { Button, TextInput } from "react-native-paper";
-import {  colorSecondary } from "./[id]";
+import { ActivityIndicator, Dimensions, PixelRatio, StyleSheet } from "react-native";
+import { Button, Portal, TextInput } from "react-native-paper";
+import {  colorMain, colorSecondary } from "./[id]";
 import {Image, ImageBackground} from "expo-image"
 import { useAssets } from "expo-asset";
 import Person from "../assets/images/person.svg"
@@ -26,11 +26,15 @@ export default function Index(){
         ])
     const [name,setName]=useState("")
     const [sku,setSku]=useState("")
+    const [db,setDb] =useState<Sqlite.SQLiteDatabase>()
+    const [loading,setLoading ] = useState(false)
     useEffect(() => {
         (async () => {
             const db = await Sqlite.openDatabaseAsync('Products.db');
+            setDb(db)
             await db.execAsync(`
                 PRAGMA journal_mode = WAL;
+                Drop TABLE IF NOT EXISTS product;
                 CREATE TABLE IF NOT EXISTS cart (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     product_id INTEGER not null,
@@ -53,6 +57,7 @@ export default function Index(){
                 );
                 CREATE TABLE IF NOT EXISTS product (
                     id INTEGER PRIMARY KEY NOT NULL,
+                    sku INTEGER,
                     name TEXT NOT NULL,
                     price INTEGER,
                     brand TEXT,
@@ -69,19 +74,81 @@ export default function Index(){
         return <View><Image source={require("../assets/images/icon.png")} /></View>
     }
     const searchProduct = async()=>{
+        setLoading(true)
         if(name!=""){
-            const p:Product[]= await getProductByName(name)
-            console.log(p)
+            let dbProduct  =null
+            try {
+                dbProduct = await db?.getFirstAsync("select * from product  where name = ?", name)
+                if (dbProduct) {
+                    setLoading(false)
+                    router.push(`/${dbProduct.id}`)
+                    return
+                }
+            } catch (e) {
+                console.log(e)
+                return
+            }
+            const products:Product[]= await getProductByName(name)
+            let product = products[0]
+          const protectAttr = product.attributes.filter(attr => attr.name.includes("مراقبت"))
+            let atter = null
+            if (protectAttr.length > 0 && protectAttr[0].options && protectAttr[0].options.length > 0) {
+                atter = protectAttr[0].options[0]
+            }
+          const dim = product.dimensions?.length + "x" + product.dimensions?.width + "x" + product.dimensions?.height + "cm"
+            try {
+                await db?.runAsync(`
+            insert into product (id,sku,name,price,brand,attrbute,short_desc,dimentions,weight,stock,link) Values (?,?,?,?,?,?,?,?,?,?,?)`,
+                    product.id, product.sku, product.name, product.price, product.brands[0]?.name ?? "", atter, product.short_description, dim, product.weight, product.stock_quantity, product.permalink
+                )
+                setLoading(false)
+                router.push(`/${product.id}`)
+            } catch (e) {
+                console.log(e)
+            }
         }
-        else if(sku!=""){
-            const p:Product[]= await getProductByName(name)
-            console.log(p)
+        else if (sku != "") {
+            let dbProduct = await db?.getFirstAsync("select * from product  where sku = ?", sku)
+            if (dbProduct) {
+                router.push(`/${dbProduct.id}`)
+                return
+            }
+            const products: Product[] = await getProductByName(name)
+            let product = products[0]
+            const protectAttr = product.attributes.filter(attr => attr.name.includes("مراقبت"))
+            let atter = null
+            if (protectAttr.length > 0 && protectAttr[0].options && protectAttr[0].options.length > 0) {
+                atter = protectAttr[0].options[0]
+            }
+            const dim = product.dimensions?.length + "x" + product.dimensions?.width + "x" + product.dimensions?.height + "cm"
+            try {
+                await db?.runAsync(`
+            insert into product (id,sku,name,price,brand,attrbute,short_desc,dimentions,weight,stock,link) Values (?,?,?,?,?,?,?,?,?,?,?)`,
+                    product.id, product.sku, product.name, product.price, product.brands[0]?.name ?? "", atter, product.short_description, dim, product.weight, product.stock_quantity, product.permalink
+                )
+                setLoading(false)
+                router.push(`/${product.id}`)
+            } catch (e) {
+                console.log(e)
+            }
+            setLoading(false)
         }
         
     }
     
     return (
         <View>
+            <Portal>
+                    {loading ?
+                    <View style={[styles.activity,{backgroundColor:"transparent"}]}>
+                        <View style={{backgroundColor:"white",padding:34,borderRadius:36,borderWidth:1,alignSelf:"center",borderColor:colorSecondary}}>
+                            <ActivityIndicator  color={colorMain} size={64} />
+                            <Text>در حال پردازش</Text>
+                        </View>
+
+                    </View>
+                    :null }
+            </Portal>
             <ImageBackground style={{ width: WIDTH, height: HEIGHT }} source={assets[1]}>
                     <Person width={PixelRatio.getPixelSizeForLayoutSize(37.49)} height={PixelRatio.getPixelSizeForLayoutSize(93.15)} style={{position:"absolute",top:15,left:5}}/>
                         {assets ? <Image source={assets![0]} style={{ width: 194, height: 80,top:100,left:170}} /> : <></>}
@@ -94,7 +161,7 @@ export default function Index(){
                         <Button labelStyle={[styles.buttonLabel, { color: "white" }]} style={styles.button} onTouchStart={searchProduct}>جست و جو</Button>
                         <Avatar onTouchStart={()=>router.push("/profile")} width={PixelRatio.getPixelSizeForLayoutSize(45)} height={PixelRatio.getPixelSizeForLayoutSize(45)} style={{position:"absolute",bottom:250,left:235}}/>
                         <ScanMe onTouchStart={() => router.push("/scanner")} width={PixelRatio.getPixelSizeForLayoutSize(88)} height={PixelRatio.getPixelSizeForLayoutSize(56)} style={{position:"absolute",bottom:140,right:150}}/>
-                        <QR onTouchStart={()=>router.push("/123")}  width={PixelRatio.getPixelSizeForLayoutSize(35)} height={PixelRatio.getPixelSizeForLayoutSize(40)} style={{position:"absolute",bottom:130,right:20}} />
+                        <QR onTouchStart={()=>router.push("/finished")}  width={PixelRatio.getPixelSizeForLayoutSize(35)} height={PixelRatio.getPixelSizeForLayoutSize(40)} style={{position:"absolute",bottom:130,right:20}} />
                         <View style={styles.footer}>
                             <Text style={[styles.text,{color:"white"}]}>طراحی توسط امیر عرشیا میرزایی</Text>
                             <Text style={[styles.text, { color: colorSecondary }]}>کلیه حقوق این اپلیکیشن متعلق به فروشگاه زردان می باشد</Text>
@@ -106,6 +173,11 @@ export default function Index(){
 const styles = StyleSheet.create({
     bgContainer:{
         flex:1
+    },
+    activity: {
+        flex: 1,
+        justifyContent: "center",
+        alignContent: "center"
     },
     footer:{
         position:"absolute",

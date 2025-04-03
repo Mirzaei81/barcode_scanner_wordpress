@@ -1,17 +1,30 @@
-import { Products } from "./types"
-export async function getProductBySKU(Sku:string):Promise<Products> {
-    const response = await fetch(`https://${process.env.EXPO_PUBLIC_WOOCOMERCE_HOST}/wp-json/wc/v3/products?sku=${Sku}`, {
-        signal:AbortSignal.timeout(10000),
-        headers: {
-          'Authorization': 'Basic ' + btoa(`${process.env.EXPO_PUBLIC_WOOCOMERCE_KEY}:${process.env.EXPO_PUBLIC_WOOCOMERCE_SECRET}`)
-        }
-      })
-    return await response.json()
+import { deleteItemAsync, getItemAsync, setItemAsync } from "expo-secure-store";
+import { Customer, Products, uri } from "./types"
+export async function getProductBySKU(Sku: string): Promise<Products|undefined> {
+  let controller = new AbortController()
+  setTimeout(() => controller.abort(), 10000);
+  const response = await fetch(`https://${process.env.EXPO_PUBLIC_WOOCOMERCE_HOST}/wp-json/wc/v3/products?sku=${Sku}`, {
+    signal: controller.signal,
+    headers: {
+      'Authorization': 'Basic ' + btoa(`${process.env.EXPO_PUBLIC_WOOCOMERCE_KEY}:${process.env.EXPO_PUBLIC_WOOCOMERCE_SECRET}`)
+    }
+  })
+  let body = await response.text()
+  try{
+    return JSON.parse(body)
+  }catch (e){
+      console.log(body,e)
+      return
+  }
+  
 }
 
 export async function getProductByName(name:string):Promise<Products> {
+    console.log(`https://${process.env.EXPO_PUBLIC_WOOCOMERCE_HOST}/wp-json/wc/v3/products?name=${name}`)
+    let controller = new AbortController()
+    setTimeout(() => controller.abort(), 10000); 
     const response = await fetch(`https://${process.env.EXPO_PUBLIC_WOOCOMERCE_HOST}/wp-json/wc/v3/products?name=${name}`, {
-        signal:AbortSignal.timeout(10000),
+        signal:controller.signal,
         headers: {
           'Authorization': 'Basic ' + btoa(`${process.env.EXPO_PUBLIC_WOOCOMERCE_KEY}:${process.env.EXPO_PUBLIC_WOOCOMERCE_SECRET}`)
         }
@@ -19,74 +32,65 @@ export async function getProductByName(name:string):Promise<Products> {
     console.log(`https://${process.env.EXPO_PUBLIC_WOOCOMERCE_HOST}/wp-json/wc/v3/products?name=${name}`)
     return await response.json()
 }
-
-export async function postOrder(){
-  const res = await fetch('https://example.com/wp-json/wc/v3/orders', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Basic ' + btoa(`${process.env.EXPO_PUBLIC_WOOCOMERCE_KEY}:${process.env.EXPO_PUBLIC_WOOCOMERCE_SECRET}`)
-    },
-    body: JSON.stringify({
-      'payment_method': 'bacs',
-      'payment_method_title': 'Direct Bank Transfer',
-      'set_paid': true,
-      'billing': {
-        'first_name': 'John',
-        'last_name': 'Doe',
-        'address_1': '969 Market',
-        'address_2': '',
-        'city': 'San Francisco',
-        'state': 'CA',
-        'postcode': '94103',
-        'country': 'US',
-        'email': 'john.doe@example.com',
-        'phone': '(555) 555-5555'
+export interface productItem {
+  product_id: number
+  quantity: number
+}
+export async function postOrder(payment_method:string,payment_title:string,first_name:string,last_name:string,city :string,state:string,postcode :string,phone:string,products:productItem[]){
+  let id = Number.parseInt(await getItemAsync("orderId",)||"-1")
+  if (id==-1){
+    const res = await fetch(`https://${process.env.EXPO_PUBLIC_WOOCOMERCE_HOST}/wp-json/wc/v3/orders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Basic ' + btoa(`${process.env.EXPO_PUBLIC_WOOCOMERCE_KEY}:${process.env.EXPO_PUBLIC_WOOCOMERCE_SECRET}`)
       },
-      'shipping': {
-        'first_name': 'John',
-        'last_name': 'Doe',
-        'address_1': '969 Market',
-        'address_2': '',
-        'city': 'San Francisco',
-        'state': 'CA',
-        'postcode': '94103',
-        'country': 'US'
-      },
-      'line_items': [
-        {
-          'product_id': 93,
-          'quantity': 2
+      body: JSON.stringify({
+        'payment_method': payment_method,
+        'payment_method_title': payment_title,
+        'set_paid': false,
+        'billing': {
+          'first_name': first_name,
+          'last_name': last_name,
+          'address_1': '',
+          'address_2': '',
+          'city': city,
+          'state': state,
+          'postcode': postcode,
+          'country': 'IR',
+          'phone': phone
         },
-        {
-          'product_id': 22,
-          'variation_id': 23,
-          'quantity': 1
-        }
-      ],
-      'shipping_lines': [
-        {
-          'method_id': 'flat_rate',
-          'method_title': 'Flat Rate',
-          'total': '10.00'
-        }
-      ]
-    })
-  });
-  return res.status
+        'shipping': {
+          'first_name': first_name,
+          'last_name': last_name,
+          "company": "",
+          'address_1': '',
+          'address_2': '',
+          'city': city,
+          'state': state,
+          'postcode': postcode,
+          'country': 'IR'
+        },
+        'line_items': products,
+        "shipping_lines": [
+          {
+            "method_title": "بسته بندی و ارسال تهران",
+            "method_id": "advanced_shipping",
+            "total_tax": "0",
+            "tax_status": "taxable",
+          }
+        ],
+        "status": "pending"
+      })
+    });
+    const response = await res.json()
+    await setItemAsync("orderId",response.id+"")
+    id = response.id 
+  }
+  //@ts-ignore 
+  return getPaymentUri(id)
 }
 
-export async function register(name:string,Phone:string,country:string){
-  const response = await fetch(`https://${process.env.EXPO_PUBLIC_WOOCOMERCE_HOST}/wp-json/digits/v1/register_user`, {
-    "method": "POST",
-    "headers": {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
-    },
-    "body":JSON.stringify({"user":Phone,"countryCode":country,"otp":name})
-  })
-  return await response.json()
-}
 export async function login(Phone:string,country:string,otp:string){
   const response = await fetch(`https://${process.env.EXPO_PUBLIC_WOOCOMERCE_HOST}/wp-json/digits/v1/login_user`, {
     "method": "POST",
@@ -97,29 +101,72 @@ export async function login(Phone:string,country:string,otp:string){
     "body":JSON.stringify({"user":Phone,"countryCode":country,"otp":otp})
   })
 }
-export async function sendOtp(Phone:string,country:string){
-  const response = await fetch(`https://zardaan.com/wp-json/digits/v1/send_otp`, {
-    method: 'POST',
-    headers:{'content-type': 'application/json'},
-    body: JSON.stringify({"countrycode":country,"mobileNo":Phone,"type":"login"})
-  });
-  console.log(response.status,`https://${process.env.EXPO_PUBLIC_WOOCOMERCE_HOST}/wp-json/digits/v1/send_otp`)
- 
-  return response.json()
-}
-export async function getCheckoutToken(resNum:number,Amount:number,phoneNumber:string){
-  const response =await fetch("https://sep.shaparak.ir/onlinepg/onlinepg", { method: "POST", headers: { "Content-Type": "application/json" },body:JSON.stringify(`{
-"action":"token",
-"TerminalId":${process.env.EXPO_PUBLIC_TERMINAL_CODE},
-"Amount":${Amount},
-"ResNum":${resNum},
-"RedirectUrl":"http://mysite.com/receipt",
-"CellNumber":${phoneNumber}
-}`) })
-const token = await response.json()
-if(token.status==1){
-  return `https://sep.shaparak.ir/OnlinePG/SendToken?token=${token.token}`  
-}
-throw Error(`${token.errorCode}\r\n\r\n${token.errorDesc}`)
+export async function sendOtp(Phone:string){
+  const response = await fetch(`https://zardaan.com/wp-json/phone/v1/send-otp/${Phone}`);
+  return await response.json()
 }
 
+export async function verifyOtp(phone:string,otp:string):Promise<Customer>{
+  const myHeaders = new Headers();
+  myHeaders.append("Content-Type", "application/json");
+  myHeaders.append("Cookie", "pxcelPage_c01002=1");
+
+  const raw = JSON.stringify({
+    "otp": otp
+  });
+
+
+  const requestOptions = {
+    method: "POST",
+    headers: myHeaders,
+    body: raw,
+    redirect: "follow"
+};
+
+  const response = await fetch(`https://zardaan.com/wp-json/phone/v1/verify-otp/${phone}`,requestOptions);
+  console.log(`https://zardaan.com/wp-json/phone/v1/verify-otp/${phone}`,JSON.stringify({"otp":otp}))
+  return await response.json()
+}
+
+
+export async function registerUser(phone:string,name:string){
+  const response = await fetch(`https://zardaan.com/wp-json/phone/v1/register/${phone}`,{method:"POST",headers:{'Content-Type':'application/json; charset=UTF-8'},body:JSON.stringify({"name":name})});
+  return await response.json()
+}
+export async function updateUser(id:string,first_name:string,last_name:string,email:string,phone:string){
+  const myHeaders = new Headers();
+  myHeaders.append("Content-Type", "application/json");
+  myHeaders.append("Authorization", 'Basic ' + btoa(`${process.env.EXPO_PUBLIC_WOOCOMERCE_KEY}:${process.env.EXPO_PUBLIC_WOOCOMERCE_SECRET}`));
+
+  const raw = JSON.stringify({
+    "first_name":first_name,
+    "last_name":last_name,
+    "username":first_name+last_name,
+    "email":email,
+    "billing": {
+      "first_name": first_name,
+      "last_name": last_name,
+      "email":email,
+      "phone": phone
+    },
+    "shipping": {
+      "first_name": first_name,
+      "last_name": last_name
+    }
+  });
+
+  const requestOptions = {
+    method: "PUT",
+    headers: myHeaders,
+    body: raw,
+    redirect: "follow"
+  };
+  //@ts-ignore
+  const response = await fetch(`https://example.com/wp-json/wc/v3/customers/${id}`, requestOptions)
+  return response.json()
+}
+
+export async function getPaymentUri(orderId:string):Promise<uri>{
+  const response = await fetch(`https://zardaan.com/wp-json/wc/v3/customers/pec/checkout1/${orderId}`);
+  return response.json()
+}

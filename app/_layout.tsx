@@ -55,6 +55,9 @@ function RootLayoutNav() {
           <Stack.Screen name="cart" options={{ presentation: 'modal',headerShown:false }} />
           <Stack.Screen name="scanner" options={{ presentation: 'modal' ,headerShown:false}} />
           <Stack.Screen name="profile" options={{ presentation: 'modal' ,headerShown:false}} />
+          <Stack.Screen name="otp" options={{ presentation: 'modal' ,headerShown:false}} />
+          <Stack.Screen name="payment" options={{ presentation: 'modal' ,headerShown:false}} />
+          <Stack.Screen name="finished" options={{ presentation: 'modal' ,headerShown:false}} />
           <Stack.Screen name="[id]" options={{ presentation: 'modal' ,headerShown:false}} />
         </Stack>
       </ThemeProvider>

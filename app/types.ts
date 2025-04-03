@@ -198,9 +198,70 @@ export type ProductTable = {
   stock: number
   dimentions: string
   id: number
+  sku: number
   link: string
   name: string
   price: number
   short_desc: string
   weight: number
+}
+
+
+
+export type Customer = {
+  id: number
+  date_created: {
+    date: string
+    timezone_type: number
+    timezone: string
+  }
+  date_modified: {
+    date: string
+    timezone_type: number
+    timezone: string
+  }
+  email: string
+  first_name: string
+  last_name: string
+  display_name: string
+  role: string
+  username: string
+  billing: {
+    first_name: string
+    last_name: string
+    company: string
+    address_1: string
+    address_2: string
+    city: string
+    postcode: string
+    country: string
+    state: string
+    email: string
+    phone: string
+  }
+  shipping: {
+    first_name: string
+    last_name: string
+    company: string
+    address_1: string
+    address_2: string
+    city: string
+    postcode: string
+    country: string
+    state: string
+    phone: string
+  }
+  is_paying_customer: boolean
+  meta_data: Array<{
+    id: number
+    key: string
+    value: string
+  }>
+  fetched: boolean
+}
+
+
+export type uri={
+    "message": string,
+    "uri": string
 }

@@ -21,8 +21,6 @@ export default function App() {
   const [overlayVisible,setOverlayVisible] = useState(true)
   const [db,setDb]= useState<SQLite.SQLiteDatabase>()
   const [permission, requestPermission] = useCameraPermissions();
-
-
   const navigation = useNavigation()
   useEffect(()=>{
       (async () => {
@@ -45,8 +43,8 @@ export default function App() {
     // Camera permissions are not granted yet.
     return (
       <View style={styles.container}>
-        <Text style={styles.message}>We need your permission to show the camera</Text>
-        <Button onPress={requestPermission} title="grant permission" />
+        <Text style={styles.message}>نیاز به اجازه شما برای استفاده از دوربین داریم</Text>
+        <Button onPress={requestPermission} title="اجازه دادن" />
       </View>
     );
   }
@@ -56,7 +54,7 @@ export default function App() {
   }
 
   async function BarcodeCallback(result:BarcodeScanningResult){
-    if(!isLoading || true){
+    if(!isLoading){
       Vibration.vibrate()
       setIsLoading(true)
       let barcodeId:string;
@@ -71,27 +69,35 @@ export default function App() {
         setOverlayVisible(false)
         router.push(`/${barcodeId}`)
       }
-      const products = await getProductBySKU(barcodeId)
-      if(products.length>0){
-        const product = products[0]
-        const protectAttr = product.attributes.filter(attr => attr.name.includes("مراقبت"))
-        let atter = null
-        if (protectAttr.length>0 && protectAttr[0].options && protectAttr[0].options.length > 0) {
-          atter = protectAttr[0].options[0]
+      if(barcodeId.length==8){
+        const products = await getProductBySKU(barcodeId)
+        if (products && products.length > 0) {
+          const product = products[0]
+          const protectAttr = product.attributes.filter(attr => attr.name.includes("مراقبت"))
+          let atter = null
+          if (protectAttr.length > 0 && protectAttr[0].options && protectAttr[0].options.length > 0) {
+            atter = protectAttr[0].options[0]
+          }
+          const dim = product.dimensions?.length + "x" + product.dimensions?.width + "x" + product.dimensions?.height + "cm"
+          try{
+            await db?.runAsync(`
+            insert into product (id,sku,name,price,brand,attrbute,short_desc,dimentions,weight,stock,link) Values (?,?,?,?,?,?,?,?,?,?,?)`,
+              product.id,product.sku, product.name, product.price, product.brands[0]?.name ?? "", atter, product.short_description, dim, product.weight, product.stock_quantity, product.permalink
+            )
+            setOverlayVisible(false)
+            router.push(`/${product.id}`)
+          }catch (e){
+            console.log(e,"there was an error")
+            setOverlayVisible(false)
+          }
+        }else{
+          setTimeout(() => setVisible(true), 200)
         }
-        const dim = product.dimensions?.length+"x"+product.dimensions?.width+"x"+product.dimensions?.height+"cm"
-
-        await db?.runAsync(`
-          insert into product (id,name,price,brand,attrbute,short_desc,dimentions,weight,stock,link) Values (?,?,?,?,?,?,?,?,?,?)`,
-          product.sku, product.name,product.price, product.brands[0]?.name ?? "", atter, product.short_description, dim, product.weight,product.stock_quantity, product.permalink
-        )
-        setOverlayVisible(false)
-        router.push(`/${parseInt(product.sku)}`)
       }
-      else{
+      else {
         setTimeout(() => setVisible(true), 200)
       }
-      setTimeout(()=>setIsLoading(false),300)
+      setTimeout(() => setIsLoading(false), 300)
     }
   }
 

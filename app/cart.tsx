@@ -60,13 +60,24 @@ export default function App() {
        setCart([])
        setVisible(false)
     }
+    const checkout=async()=>{
+        cart.forEach(async(item)=>{
+            console.log(item)
+            await db?.runAsync(`update cart set count= ? where id = ?`, item.count, item.cart_id)
+        })
+        router.push({ pathname: "/checkout", params: { cost: cart.reduce((acc, obj) => acc + obj.product_price * obj.count, 0) } })
+
+    }
     return (
         <SafeAreaView style={{ backgroundColor: colorSecondary, width: "100%", height: "100%" }}>
                 <View style={styles.header}>
 
                     {/* <Button contentStyle={{ height: 70 }} mode="outlined" onTouchStart={goProductDetail} labelStyle={styles.buttonLabel} style={styles.button}>لینک محصول</Button> */}
                     {assets ? <Image source={assets[0]} style={{ width: 220, height: 80 }} /> : <></>}
-                    <FontAwesome style={{ paddingHorizontal: 20 }} color={colorMain} name="home" size={72} />
+
+                    <TouchableOpacity onPressIn={() => router.push("/")} >
+                        <FontAwesome style={{ paddingHorizontal: 20 }} color={colorMain} name="home" size={72} />
+                    </TouchableOpacity>
                     <TouchableOpacity onPressIn={() => BackHandler.exitApp()} style={styles.exit}>
                         <MaterialCommunityIcons color="#ffffffff" name="location-exit" size={48} />
                     </TouchableOpacity>
@@ -109,7 +120,7 @@ export default function App() {
                 </View>
                 </View>
                 <View style={{"display":"flex",flexDirection:"row-reverse",justifyContent:"center"}}>
-                <TouchableOpacity onPress={() => router.push("/checkout")} style={{ backgroundColor: "green", padding: 15, borderEndEndRadius: 40, borderTopEndRadius: 40, marginLeft: 5, borderStartStartRadius: 15, borderBottomLeftRadius: 15, paddingHorizontal: 60 }}><AntDesign size={25} color="white" name="check" /></TouchableOpacity>
+                <TouchableOpacity onPress={() => checkout()} style={{ backgroundColor: "green", padding: 15, borderEndEndRadius: 40, borderTopEndRadius: 40, marginLeft: 5, borderStartStartRadius: 15, borderBottomLeftRadius: 15, paddingHorizontal: 60 }}><AntDesign size={25} color="white" name="check" /></TouchableOpacity>
                 <TouchableOpacity onPress={() => { setVisible(true) }} style={{ backgroundColor: "red", padding: 15, borderEndEndRadius: 15, borderTopEndRadius: 15, marginLeft: 5, borderStartStartRadius: 40, borderBottomLeftRadius: 40, paddingHorizontal: 40 }}><Entypo size={25} color="white" name="cross" /></TouchableOpacity>
                 </View>
         </SafeAreaView>
