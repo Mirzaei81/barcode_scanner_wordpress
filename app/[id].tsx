@@ -43,7 +43,7 @@ export default function App() {
     useEffect(() => {
         (async () => {
             const db = await Sqlite.openDatabaseAsync('Products.db');
-            const product: ProductTable = (await db.getFirstAsync("Select * from product where id = ?", id))!;
+            const product: ProductTable = (await db.getFirstAsync("Select * from product where sku = ?", id))!;
             (async () => {
                 const products = await getProductBySKU(product.sku+"")
                 let cartDetail:{id:number,count:number}|undefined|null
@@ -56,7 +56,7 @@ export default function App() {
                     const Updatedproduct = products[0];
                     if (parseInt(Updatedproduct.price) != product.price) {
                         try{
-                            await db?.runAsync(`update product set price= ? where id = ?`, Updatedproduct.price, id)
+                            await db?.runAsync(`update product set price= ? where sku = ?`, Updatedproduct.price, id)
                         }catch(e){
                             console.log(e,"at update price ")
                         }
@@ -64,7 +64,7 @@ export default function App() {
                     }
                     if (Updatedproduct.stock_quantity != product.stock) {
                         try{
-                            await db?.runAsync(`update product set stock= ? where id = ?`, Updatedproduct.stock_quantity, id)
+                            await db?.runAsync(`update product set stock= ? where sku = ?`, Updatedproduct.stock_quantity, id)
                         }catch(e){
                             console.log(e,"at update stock")
                         }
@@ -146,7 +146,7 @@ export default function App() {
                             <Text style={styles.text}>فی</Text><Text style={styles.detail}> {Intl.NumberFormat("en-us").format(product?.price!)}  تومان</Text>
                         </View>
                         <View style={styles.row}>
-                            <Text style={styles.text}>شناسه</Text><Text style={styles.detail}>{product?.id}</Text>
+                            <Text style={styles.text}>شناسه</Text><Text style={styles.detail}>{product?.sku}</Text>
                         </View>
                         <View style={styles.row}>
                             <Text style={styles.text}>ابعاد </Text><Text style={styles.detail}>  {product?.dimentions=="xxcm"?"نامعین":product?.dimentions} </Text>

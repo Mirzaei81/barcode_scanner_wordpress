@@ -16,6 +16,7 @@ const {height:ScreenHeight} = Dimensions.get("window");
 
 export default function App() {
   const [facing, setFacing] = useState<CameraType>('back');
+  const [error,setError] = useState("")
   const [visible,setVisible] = useState(false)
   const [isLoading,setIsLoading] = useState<boolean>(false);
   const [overlayVisible,setOverlayVisible] = useState(true)
@@ -58,19 +59,28 @@ export default function App() {
       Vibration.vibrate()
       setIsLoading(true)
       let barcodeId:string;
+      console.log(result.data)
       if(result.data.length==14){
         barcodeId= result.data.slice(0, -6);
       }
       else{
         barcodeId= result.data
       }
-      const firstRow:{Count:number} = (await db?.getFirstAsync("SELECT COUNT(*) AS Count FROM product WHERE id = ?",barcodeId))!
-      if(firstRow.Count!=0){
+      let firstRow: { Count: number }|null = null
+      try{
+        firstRow  = (await db?.getFirstAsync("SELECT COUNT(*) AS Count FROM product WHERE sku = ?", barcodeId))!
+        console.log(firstRow)
+      }catch(e){
+        console.log(e)
+      }
+      if(firstRow && firstRow.Count!=0){
         setOverlayVisible(false)
         router.push(`/${barcodeId}`)
       }
       if(barcodeId.length==8){
+        console.log(barcodeId.length)
         const products = await getProductBySKU(barcodeId)
+        console.log(products)
         if (products && products.length > 0) {
           const product = products[0]
           const protectAttr = product.attributes.filter(attr => attr.name.includes("مراقبت"))
@@ -87,7 +97,7 @@ export default function App() {
             setOverlayVisible(false)
             router.push(`/${product.id}`)
           }catch (e){
-            console.log(e,"there was an error")
+            setError(e.toString())
             setOverlayVisible(false)
           }
         }else{
@@ -103,6 +113,7 @@ export default function App() {
 
   return (
       <View style={styles.container}>
+      {error != "" ? <Snackbar onDismiss={() => setError("")} visible={error != ""}>{error}</Snackbar> : null}
         <CameraView
           onBarcodeScanned={BarcodeCallback}
           active={!isLoading}
@@ -118,7 +129,7 @@ export default function App() {
                     onDismiss={() => setVisible(false)}>
                     این محصول در سایت پیدا نشد
                   </Snackbar>
-                  {isLoading ? <ActivityIndicator style={styles.activity} color={colorMain} size={96} /> : <BarcodeMask width={300} height={100} />}
+                  {isLoading ? <ActivityIndicator style={styles.activity} color={colorMain} size={96} /> : <BarcodeMask width={300} height={300} />}
                 </>
               )
             }

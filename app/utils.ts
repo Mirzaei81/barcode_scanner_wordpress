@@ -2,6 +2,7 @@ import { deleteItemAsync, getItemAsync, setItemAsync } from "expo-secure-store";
 import { Customer, Products, uri } from "./types"
 export async function getProductBySKU(Sku: string): Promise<Products|undefined> {
   let controller = new AbortController()
+  console.log(`https://${process.env.EXPO_PUBLIC_WOOCOMERCE_HOST}/wp-json/wc/v3/products?sku=${Sku}`)
   setTimeout(() => controller.abort(), 10000);
   const response = await fetch(`https://${process.env.EXPO_PUBLIC_WOOCOMERCE_HOST}/wp-json/wc/v3/products?sku=${Sku}`, {
     signal: controller.signal,
@@ -9,6 +10,7 @@ export async function getProductBySKU(Sku: string): Promise<Products|undefined> 
       'Authorization': 'Basic ' + btoa(`${process.env.EXPO_PUBLIC_WOOCOMERCE_KEY}:${process.env.EXPO_PUBLIC_WOOCOMERCE_SECRET}`)
     }
   })
+  console.log(response.status)
   let body = await response.text()
   try{
     return JSON.parse(body)

@@ -1,6 +1,6 @@
 import { View,Text } from "@/components/Themed";
 import { ActivityIndicator, Dimensions, PixelRatio, StyleSheet } from "react-native";
-import { Button, Portal, TextInput } from "react-native-paper";
+import { Button, Portal, Snackbar, TextInput } from "react-native-paper";
 import {  colorMain, colorSecondary } from "./[id]";
 import {Image, ImageBackground} from "expo-image"
 import { useAssets } from "expo-asset";
@@ -18,7 +18,7 @@ const WIDTH = Dimensions.get('screen').width;
 const HEIGHT = Dimensions.get('screen').height;
 
 export default function Index(){
-    const [assets, error] = useAssets([
+    const [assets,e] = useAssets([
         require("../assets/images/Title.png"),
         require("../assets/images/bg.png"),
         ,
@@ -28,13 +28,14 @@ export default function Index(){
     const [sku,setSku]=useState("")
     const [db,setDb] =useState<Sqlite.SQLiteDatabase>()
     const [loading,setLoading ] = useState(false)
+    const [error,setError] = useState("")
     useEffect(() => {
         (async () => {
             const db = await Sqlite.openDatabaseAsync('Products.db');
             setDb(db)
+            try{
             await db.execAsync(`
                 PRAGMA journal_mode = WAL;
-                Drop TABLE IF NOT EXISTS product;
                 CREATE TABLE IF NOT EXISTS cart (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     product_id INTEGER not null,
@@ -68,8 +69,12 @@ export default function Index(){
                     stock INTEGER,
                     link TEXT
                   );`);
+            }catch (e){
+                setError(e.toString())
+            }
         })()
     }, [])
+    useEffect(()=>{setLoading(false)},[loading])
     if(error || assets==null){
         return <View><Image source={require("../assets/images/icon.png")} /></View>
     }
@@ -79,6 +84,7 @@ export default function Index(){
             let dbProduct  =null
             try {
                 dbProduct = await db?.getFirstAsync("select * from product  where name = ?", name)
+                console.log(dbProduct)
                 if (dbProduct) {
                     setLoading(false)
                     router.push(`/${dbProduct.id}`)
@@ -86,6 +92,7 @@ export default function Index(){
                 }
             } catch (e) {
                 console.log(e)
+                setError(e.toString())
                 return
             }
             const products:Product[]= await getProductByName(name)
@@ -104,7 +111,7 @@ export default function Index(){
                 setLoading(false)
                 router.push(`/${product.id}`)
             } catch (e) {
-                console.log(e)
+                setError(e.toString())
             }
         }
         else if (sku != "") {
@@ -138,17 +145,18 @@ export default function Index(){
     
     return (
         <View>
-            <Portal>
-                    {loading ?
-                    <View style={[styles.activity,{backgroundColor:"transparent"}]}>
-                        <View style={{backgroundColor:"white",padding:34,borderRadius:36,borderWidth:1,alignSelf:"center",borderColor:colorSecondary}}>
-                            <ActivityIndicator  color={colorMain} size={64} />
+            {error!=""?<Snackbar onDismiss={()=>setError("")} visible={error!=""}>{error}</Snackbar>:null}
+            {loading ?
+                <Portal>
+                    <View style={[styles.activity, { backgroundColor: "transparent", visibility: loading ? "visible" : "hidden" }]}>
+                        <View style={{ backgroundColor: "white", padding: 34, borderRadius: 36, borderWidth: 1, alignSelf: "center", borderColor: colorSecondary }}>
+                            <ActivityIndicator color={colorMain} size={64} />
                             <Text>در حال پردازش</Text>
                         </View>
 
                     </View>
-                    :null }
-            </Portal>
+                </Portal>
+                : null}
             <ImageBackground style={{ width: WIDTH, height: HEIGHT }} source={assets[1]}>
                     <Person width={PixelRatio.getPixelSizeForLayoutSize(37.49)} height={PixelRatio.getPixelSizeForLayoutSize(93.15)} style={{position:"absolute",top:15,left:5}}/>
                         {assets ? <Image source={assets![0]} style={{ width: 194, height: 80,top:100,left:170}} /> : <></>}
@@ -161,7 +169,7 @@ export default function Index(){
                         <Button labelStyle={[styles.buttonLabel, { color: "white" }]} style={styles.button} onTouchStart={searchProduct}>جست و جو</Button>
                         <Avatar onTouchStart={()=>router.push("/profile")} width={PixelRatio.getPixelSizeForLayoutSize(45)} height={PixelRatio.getPixelSizeForLayoutSize(45)} style={{position:"absolute",bottom:250,left:235}}/>
                         <ScanMe onTouchStart={() => router.push("/scanner")} width={PixelRatio.getPixelSizeForLayoutSize(88)} height={PixelRatio.getPixelSizeForLayoutSize(56)} style={{position:"absolute",bottom:140,right:150}}/>
-                        <QR onTouchStart={()=>router.push("/finished")}  width={PixelRatio.getPixelSizeForLayoutSize(35)} height={PixelRatio.getPixelSizeForLayoutSize(40)} style={{position:"absolute",bottom:130,right:20}} />
+                        <QR  onTouchStart={() => router.push("/scanner")} width={PixelRatio.getPixelSizeForLayoutSize(35)} height={PixelRatio.getPixelSizeForLayoutSize(40)} style={{position:"absolute",bottom:130,right:20}} />
                         <View style={styles.footer}>
                             <Text style={[styles.text,{color:"white"}]}>طراحی توسط امیر عرشیا میرزایی</Text>
                             <Text style={[styles.text, { color: colorSecondary }]}>کلیه حقوق این اپلیکیشن متعلق به فروشگاه زردان می باشد</Text>
