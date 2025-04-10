@@ -44,6 +44,10 @@ export default function App() {
         (async () => {
             const db = await Sqlite.openDatabaseAsync('Products.db');
             const product: ProductTable = (await db.getFirstAsync("Select * from product where sku = ?", id))!;
+            if(product.name =="") {
+                await db.execAsync(`Select * from product where sku = ${id}`)
+                router.push("/scanner")
+            }
             (async () => {
                 const products = await getProductBySKU(product.sku+"")
                 let cartDetail:{id:number,count:number}|undefined|null
