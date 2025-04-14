@@ -12,7 +12,8 @@ import Minus from "../assets/images/minus.svg"
 import { AntDesign, Entypo } from "@expo/vector-icons"
 import { Button, Portal,Modal } from "react-native-paper"
 import { router } from "expo-router"
-import { dismissBrowser } from "expo-web-browser"
+import Qr from "../assets/images/qr_blue.svg"
+import Logo from "../assets/images/logo.svg"
 
 interface cart{
     cart_id: number
@@ -55,7 +56,6 @@ export default function App() {
         } 
     }
     const clearDb=async()=>{
-        console.log("deleting db")
        await db?.execAsync(`delete from cart;`)
        setCart([])
        setVisible(false)
@@ -71,10 +71,8 @@ export default function App() {
     return (
         <SafeAreaView style={{ backgroundColor: colorSecondary, width: "100%", height: "100%" }}>
                 <View style={styles.header}>
-
                     {/* <Button contentStyle={{ height: 70 }} mode="outlined" onTouchStart={goProductDetail} labelStyle={styles.buttonLabel} style={styles.button}>لینک محصول</Button> */}
-                    {assets ? <Image source={assets[0]} style={{ width: 220, height: 80 }} /> : <></>}
-
+                    {assets ? <Image source={assets[0]} style={{ width: 220, height: 80,marginRight:5 }} /> : <></>}
                     <TouchableOpacity onPressIn={() => router.push("/")} >
                         <FontAwesome style={{ paddingHorizontal: 20 }} color={colorMain} name="home" size={72} />
                     </TouchableOpacity>
@@ -119,9 +117,10 @@ export default function App() {
                     <Text style={{fontSize:16,borderColor:"black",borderWidth:1,paddingHorizontal:30,borderRadius:5}}>تومان {(cart.reduce((acc, obj) => acc + obj.product_price*obj.count, 0)).toLocaleString("en-us")}</Text>
                 </View>
                 </View>
-                <View style={{"display":"flex",flexDirection:"row-reverse",justifyContent:"center"}}>
+                <View style={{"display":"flex",flexDirection:"row-reverse",justifyContent:"center",alignItems:"center"}}>
                 <TouchableOpacity onPress={() => checkout()} style={{ backgroundColor: "green", padding: 15, borderEndEndRadius: 40, borderTopEndRadius: 40, marginLeft: 5, borderStartStartRadius: 15, borderBottomLeftRadius: 15, paddingHorizontal: 60 }}><AntDesign size={25} color="white" name="check" /></TouchableOpacity>
-                <TouchableOpacity onPress={() => { setVisible(true) }} style={{ backgroundColor: "red", padding: 15, borderEndEndRadius: 15, borderTopEndRadius: 15, marginLeft: 5, borderStartStartRadius: 40, borderBottomLeftRadius: 40, paddingHorizontal: 40 }}><Entypo size={25} color="white" name="cross" /></TouchableOpacity>
+                <Qr onPress={() => router.push("/scanner")} />
+                <TouchableOpacity onPress={() => { setVisible(true) }} style={{ backgroundColor: "red", padding: 15, borderEndEndRadius: 15, borderTopEndRadius: 15, marginRight: 5, borderStartStartRadius: 40, borderBottomLeftRadius: 40, paddingHorizontal: 40 }}><Entypo size={25} color="white" name="cross" /></TouchableOpacity>
                 </View>
         </SafeAreaView>
     )

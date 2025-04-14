@@ -1,6 +1,88 @@
 import { deleteItemAsync, getItemAsync, setItemAsync } from "expo-secure-store";
-import { Customer, Products, uri } from "./types"
-export async function getProductBySKU(Sku: string): Promise<Products|undefined> {
+import { Customer, Product, Products, uri } from "./types"
+import OpenAI from 'react-native-openai';
+
+export async function genrateProduct(output: string): Promise<Products | undefined> {
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.EXPO_PUBLIC_GEMINI_KEY}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    // body: '{\n  "contents": [{\n    "parts":[{"text": "Explain how AI works"}]\n    }]\n   }',
+    body: JSON.stringify({
+      "system_instruction": {
+        "parts": [
+          {
+            "text": `You are a product serilizer you job is to convert the given input into this json form only return the json and no other charecter json must be valid
+            categories are in this format 
+          {attrbute: string|null,brand: string,stock: number,dimentions: string,id: number,sku: number,link: string,name: string,price: number,description:string ,short_desc: string,weight: number}`
+          }
+        ]
+      },
+      'contents': [
+        {
+
+          'parts': [
+            {
+              'text': output
+            }
+          ]
+        }
+      ]
+    })
+  });
+  const prod:Product =await response.json()
+}
+export async function create_product(productName:String,productType:String,productPrice:String,productDescription:String,productShortDescription:String,productCategories:String,productImages:String){
+  const response = await fetch(`https://${process.env.EXPO_PUBLIC_WOOCOMERCE_HOST}/wp-json/wc/v3/products`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Basic ' + btoa(`${process.env.EXPO_PUBLIC_WOOCOMERCE_KEY}:${process.env.EXPO_PUBLIC_WOOCOMERCE_SECRET}`)
+    },
+    body: JSON.stringify({
+      'name': productName,
+      'type': productType,
+      'regular_price': productPrice,
+      'description': productDescription,
+      'short_description': productShortDescription,
+      'categories': [
+        productCategories
+      ],
+      'images': [
+        productImages
+      ]
+    })
+  });
+  return response.json()
+}
+export async function getProductIKEA(sku:Number):Promise<Products|undefined> {
+  const myHeaders = new Headers();
+  myHeaders.append("Content-Type", "application/json");
+  myHeaders.append("Authorization", "Basic  "+ btoa(`${process.env.EXPO_PUBLIC_WOOCOMERCE_KEY}:${process.env.EXPO_PUBLIC_WOOCOMERCE_SECRET}`))
+  const raw = JSON.stringify({
+    "searchParameters": {
+      "input":sku,
+      "type": "QUERY"
+    },
+    "components": [
+      {
+        "component": "PRIMARY_AREA"
+      }
+    ]
+  });
+
+  const requestOptions = {
+    method: "POST",
+    headers: myHeaders,
+    body: raw,
+    redirect: "follow"
+  };
+
+  const response = await fetch("https://sik.search.blue.cdtapps.com/ae/en/search", requestOptions)
+  return await response.json()
+}
+export async function getProductBySKU(Sku: string): Promise<Products|boolean|undefined> {
   let controller = new AbortController()
   console.log(`https://${process.env.EXPO_PUBLIC_WOOCOMERCE_HOST}/wp-json/wc/v3/products?sku=${Sku}`)
   setTimeout(() => controller.abort(), 10000);
@@ -10,10 +92,13 @@ export async function getProductBySKU(Sku: string): Promise<Products|undefined> 
       'Authorization': 'Basic ' + btoa(`${process.env.EXPO_PUBLIC_WOOCOMERCE_KEY}:${process.env.EXPO_PUBLIC_WOOCOMERCE_SECRET}`)
     }
   })
-  console.log(response.status)
   let body = await response.text()
   try{
-    return JSON.parse(body)
+    const product:Products = JSON.parse(body)
+    if(product.length==0){
+      return true
+    }
+    return product
   }catch (e){
       console.log(body,e)
       return
@@ -22,16 +107,14 @@ export async function getProductBySKU(Sku: string): Promise<Products|undefined> 
 }
 
 export async function getProductByName(name:string):Promise<Products> {
-    console.log(`https://${process.env.EXPO_PUBLIC_WOOCOMERCE_HOST}/wp-json/wc/v3/products?name=${name}`)
     let controller = new AbortController()
     setTimeout(() => controller.abort(), 10000); 
-    const response = await fetch(`https://${process.env.EXPO_PUBLIC_WOOCOMERCE_HOST}/wp-json/wc/v3/products?name=${name}`, {
+    const response = await fetch(`https://${process.env.EXPO_PUBLIC_WOOCOMERCE_HOST}/wp-json/wc/v3/products?search=${name}`, {
         signal:controller.signal,
         headers: {
           'Authorization': 'Basic ' + btoa(`${process.env.EXPO_PUBLIC_WOOCOMERCE_KEY}:${process.env.EXPO_PUBLIC_WOOCOMERCE_SECRET}`)
         }
       })
-    console.log(`https://${process.env.EXPO_PUBLIC_WOOCOMERCE_HOST}/wp-json/wc/v3/products?name=${name}`)
     return await response.json()
 }
 export interface productItem {

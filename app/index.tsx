@@ -75,7 +75,7 @@ export default function Index(){
         })()
     }, [])
     useEffect(()=>{setLoading(false)},[loading])
-    if(error || assets==null){
+    if(e || assets==null){
         return <View><Image source={require("../assets/images/icon.png")} /></View>
     }
     const searchProduct = async()=>{
@@ -83,7 +83,7 @@ export default function Index(){
         if(name!=""){
             let dbProduct  =null
             try {
-                dbProduct = await db?.getFirstAsync("select * from product  where name = ?", name)
+                dbProduct = await db?.getFirstAsync("select * from product  where name like ?", name)
                 console.log(dbProduct)
                 if (dbProduct) {
                     setLoading(false)
@@ -91,33 +91,34 @@ export default function Index(){
                     return
                 }
             } catch (e) {
-                console.log(e)
                 setError(e.toString())
                 return
             }
-            const products:Product[]= await getProductByName(name)
+            const products: Product[] = await getProductByName(name)
             let product = products[0]
-          const protectAttr = product.attributes.filter(attr => attr.name.includes("مراقبت"))
+            const protectAttr = product.attributes.filter(attr => attr.name.includes("مراقبت"))
             let atter = null
             if (protectAttr.length > 0 && protectAttr[0].options && protectAttr[0].options.length > 0) {
                 atter = protectAttr[0].options[0]
             }
-          const dim = product.dimensions?.length + "x" + product.dimensions?.width + "x" + product.dimensions?.height + "cm"
+            const dim = product.dimensions?.length + "x" + product.dimensions?.width + "x" + product.dimensions?.height + "cm"
             try {
                 await db?.runAsync(`
             insert into product (id,sku,name,price,brand,attrbute,short_desc,dimentions,weight,stock,link) Values (?,?,?,?,?,?,?,?,?,?,?)`,
                     product.id, product.sku, product.name, product.price, product.brands[0]?.name ?? "", atter, product.short_description, dim, product.weight, product.stock_quantity, product.permalink
                 )
                 setLoading(false)
-                router.push(`/${product.id}`)
+                router.push(`/${product.sku}`)
             } catch (e) {
+                router.push(`/${product.sku}`)
+                console.log(e.toString()+ sku+  "  there was an error")
                 setError(e.toString())
             }
         }
         else if (sku != "") {
             let dbProduct = await db?.getFirstAsync("select * from product  where sku = ?", sku)
             if (dbProduct) {
-                router.push(`/${dbProduct.id}`)
+                router.push(`/${dbProduct.sku}`)
                 return
             }
             const products: Product[] = await getProductByName(name)
@@ -169,7 +170,7 @@ export default function Index(){
                         <Button labelStyle={[styles.buttonLabel, { color: "white" }]} style={styles.button} onTouchStart={searchProduct}>جست و جو</Button>
                         <Avatar onTouchStart={()=>router.push("/profile")} width={PixelRatio.getPixelSizeForLayoutSize(45)} height={PixelRatio.getPixelSizeForLayoutSize(45)} style={{position:"absolute",bottom:250,left:235}}/>
                         <ScanMe onTouchStart={() => router.push("/scanner")} width={PixelRatio.getPixelSizeForLayoutSize(88)} height={PixelRatio.getPixelSizeForLayoutSize(56)} style={{position:"absolute",bottom:140,right:150}}/>
-                        <QR  onTouchStart={() => router.push("/scanner")} width={PixelRatio.getPixelSizeForLayoutSize(35)} height={PixelRatio.getPixelSizeForLayoutSize(40)} style={{position:"absolute",bottom:130,right:20}} />
+                        <QR  onTouchStart={() => router.push("/cart")} width={PixelRatio.getPixelSizeForLayoutSize(35)} height={PixelRatio.getPixelSizeForLayoutSize(40)} style={{position:"absolute",bottom:130,right:20}} />
                         <View style={styles.footer}>
                             <Text style={[styles.text,{color:"white"}]}>طراحی توسط امیر عرشیا میرزایی</Text>
                             <Text style={[styles.text, { color: colorSecondary }]}>کلیه حقوق این اپلیکیشن متعلق به فروشگاه زردان می باشد</Text>

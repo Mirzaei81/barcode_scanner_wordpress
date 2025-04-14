@@ -13,6 +13,9 @@
     "production": {}
   },
   "submit": {
-    "production": {}
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    }
   }
 }

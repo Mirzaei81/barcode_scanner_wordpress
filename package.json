@@ -39,6 +39,7 @@
     "react-native-dropdown-country-picker": "^1.0.11",
     "react-native-html-parser": "^0.1.0",
     "react-native-localize": "^3.4.1",
+    "react-native-openai": "^0.6.2",
     "react-native-paper": "^5.13.1",
     "react-native-paper-dropdown": "^2.3.1",
     "react-native-reanimated": "~3.16.1",

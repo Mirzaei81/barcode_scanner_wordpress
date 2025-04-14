@@ -45,6 +45,7 @@ export default function App() {
     };
     useEffect(()=>{
         (async()=>{
+            router.push("/login")
             const name = await  getItemAsync("name")
             if(name == null || name.length ==0){
                 router.push("/login")

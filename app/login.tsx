@@ -64,7 +64,7 @@ export default function App() {
     const onSubmit = async () => {
         setLoading(true)
         if(phone.length==10){
-            await sendOtp(phone)
+            console.log(await sendOtp(phone))
             router.push({pathname:"/otp",params:{phone}})
         }
             

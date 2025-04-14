@@ -34,6 +34,9 @@ export default function App() {
       headerShown: false
     })
   }, [])
+  useEffect(()=>{
+    setOverlayVisible(true)
+  },[])
 
   if (!permission) {
     // Camera permissions are still loading.
@@ -69,7 +72,6 @@ export default function App() {
       let firstRow: { Count: number }|null = null
       try{
         firstRow  = (await db?.getFirstAsync("SELECT COUNT(*) AS Count FROM product WHERE sku = ?", barcodeId))!
-        console.log(firstRow)
       }catch(e){
         console.log(e)
       }
@@ -77,10 +79,10 @@ export default function App() {
         setOverlayVisible(false)
         router.push(`/${barcodeId}`)
       }
+      console.log(barcodeId)
       if(barcodeId.length==8){
-        console.log(barcodeId.length)
         const products = await getProductBySKU(barcodeId)
-        console.log(products)
+        setOverlayVisible(false)
         if (products && products.length > 0) {
           const product = products[0]
           const protectAttr = product.attributes.filter(attr => attr.name.includes("مراقبت"))
@@ -94,8 +96,8 @@ export default function App() {
             insert into product (id,sku,name,price,brand,attrbute,short_desc,dimentions,weight,stock,link) Values (?,?,?,?,?,?,?,?,?,?,?)`,
               product.id,product.sku, product.name, product.price, product.brands[0]?.name ?? "", atter, product.short_description, dim, product.weight, product.stock_quantity, product.permalink
             )
-            setOverlayVisible(false)
-            router.push(`/${product.id}`)
+            console.log(product.id,product.sku, product.name, product.price, product.brands[0]?.name ?? "", atter, product.short_description, dim, product.weight, product.stock_quantity, product.permalink)
+            router.push(`/${product.sku}`)
           }catch (e){
             setError(e.toString())
             setOverlayVisible(false)

@@ -14,7 +14,7 @@ import { ActivityIndicator, Button, Checkbox, Portal, RadioButton, TextInput, Mo
 import { Dropdown,Option } from 'react-native-paper-dropdown';
 import { useLocalSearchParams, useSearchParams } from "expo-router/build/hooks"
 import { postOrder, productItem } from "./utils"
-import { dismissBrowser } from "expo-web-browser"
+import Qr from "../assets/images/qr_blue.svg"
 
 const transferMethods = {
     post:"ارسال با پیک به تهران",
@@ -84,6 +84,7 @@ export default function App(){
         try{
             const res = await fetch(`https://iran-locations-api.ir/api/v1/fa/cities?state=${p}`)
             const states = await res.json()
+            console.log(states)
             //@ts-ignore
             const opts = states[0]["cities"].map<Option>((i) => ({ label: i.name, value: i.name }))
             setStates(opts)
@@ -167,7 +168,6 @@ export default function App(){
 
                 <View style={styles.main}>
                     <ScrollView>
-                        
                         <TouchableOpacity onPress={()=>setVisible(true)} style={{ display: "flex", direction: "rtl", alignSelf:"flex-end"}}>
                             <Text style={{textAlign:"right", padding: 5, width: "100%", borderWidth: 1, fontSize: 22, color: "#008000ff", borderColor: "#008000ff", borderRadius: 10 }}>آدرس جدید</Text>
                         </TouchableOpacity>
@@ -193,10 +193,10 @@ export default function App(){
                         </View>
                         <View style={{display:"flex",flexDirection:"row",marginTop:25,justifyContent:"center"}}>
                             <View style={{ width: "45%",marginRight:10 }}>
-                                <Dropdown hideMenuHeader  value={checkout.city}  disabled={states.length == 0} mode="outlined" placeholder="شهر" options={states} onSelect={(d) =>setCheckout({...checkout,city:d??""}) } />
+                                <Dropdown hideMenuHeader   value={checkout.city}  disabled={states.length == 0} mode="outlined" placeholder="شهر" options={states} onSelect={(d) =>setCheckout({...checkout,city:d??""}) } />
                             </View>
                             <View style={{ width: "45%" }}>
-                                <Dropdown hideMenuHeader  value={checkout.province} disabled={provinces.length==0} mode="outlined" placeholder="استان" options={provinces} onSelect={(d) => setProvince(d ?? "")} />
+                                <Dropdown hideMenuHeader  value={checkout.province} disabled={provinces.length==0} mode="outlined" placeholder="استان" options={provinces} onSelect={(d) => setProvince(checkout,d ?? "")} />
                             </View>
                         </View>
                         <View style={{ direction: "rtl", display: "flex", flexDirection: "row",marginBottom:4}}>

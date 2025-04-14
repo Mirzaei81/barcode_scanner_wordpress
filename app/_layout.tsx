@@ -51,6 +51,7 @@ function RootLayoutNav() {
         <Stack>
           <Stack.Screen name="index" options={{ presentation: 'modal',headerShown:false }} />
           <Stack.Screen name="register" options={{ presentation: 'modal',headerShown:false }} />
+          <Stack.Screen name="login" options={{ presentation: 'modal',headerShown:false }} />
           <Stack.Screen name="checkout" options={{ presentation: 'modal',headerShown:false }} />
           <Stack.Screen name="cart" options={{ presentation: 'modal',headerShown:false }} />
           <Stack.Screen name="scanner" options={{ presentation: 'modal' ,headerShown:false}} />

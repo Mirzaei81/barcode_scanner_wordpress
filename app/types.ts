@@ -202,6 +202,7 @@ export type ProductTable = {
   link: string
   name: string
   price: number
+  description:string
   short_desc: string
   weight: number
 }

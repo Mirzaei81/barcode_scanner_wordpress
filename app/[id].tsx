@@ -41,6 +41,7 @@ export default function App() {
     const [e,setE] = useState("")
 
     useEffect(() => {
+        console.log(id);
         (async () => {
             const db = await Sqlite.openDatabaseAsync('Products.db');
             const product: ProductTable = (await db.getFirstAsync("Select * from product where sku = ?", id))!;
@@ -219,6 +220,7 @@ const styles = StyleSheet.create({
         paddingHorizontal:45,
         borderRadius:5,
         padding:5,
+        color:"black",
         borderColor:"#016bb7ff",
         borderWidth:1
     },
