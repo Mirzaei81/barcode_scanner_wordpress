@@ -3,7 +3,7 @@ import { CameraView, CameraType, useCameraPermissions, BarcodeScanningResult } f
 import { router, useNavigation } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { Button, StyleSheet, TouchableOpacity,Dimensions,Vibration} from 'react-native';
-import { getProductBySKU } from './utils';
+import { genrateProduct, getProductBySKU, getProductIKEA } from './utils';
 import BarcodeMask from "react-native-barcode-mask"
 import {ActivityIndicator, Portal, Snackbar} from "react-native-paper"
 import {Icon} from "react-native-paper"
@@ -82,28 +82,32 @@ export default function App() {
       console.log(barcodeId)
       if(barcodeId.length==8){
         const products = await getProductBySKU(barcodeId)
-        setOverlayVisible(false)
-        if (products && products.length > 0) {
-          const product = products[0]
-          const protectAttr = product.attributes.filter(attr => attr.name.includes("مراقبت"))
-          let atter = null
-          if (protectAttr.length > 0 && protectAttr[0].options && protectAttr[0].options.length > 0) {
-            atter = protectAttr[0].options[0]
-          }
-          const dim = product.dimensions?.length + "x" + product.dimensions?.width + "x" + product.dimensions?.height + "cm"
-          try{
-            await db?.runAsync(`
+        if (products === true){
+          await getProductBySKU(barcodeId)
+        } else {
+          setOverlayVisible(false)
+          if (products && products.length > 0) {
+            const product = products[0]
+            const protectAttr = product.attributes.filter(attr => attr.name.includes("مراقبت"))
+            let atter = null
+            if (protectAttr.length > 0 && protectAttr[0].options && protectAttr[0].options.length > 0) {
+              atter = protectAttr[0].options[0]
+            }
+            const dim = product.dimensions?.length + "x" + product.dimensions?.width + "x" + product.dimensions?.height + "cm"
+            try {
+              await db?.runAsync(`
             insert into product (id,sku,name,price,brand,attrbute,short_desc,dimentions,weight,stock,link) Values (?,?,?,?,?,?,?,?,?,?,?)`,
-              product.id,product.sku, product.name, product.price, product.brands[0]?.name ?? "", atter, product.short_description, dim, product.weight, product.stock_quantity, product.permalink
-            )
-            console.log(product.id,product.sku, product.name, product.price, product.brands[0]?.name ?? "", atter, product.short_description, dim, product.weight, product.stock_quantity, product.permalink)
-            router.push(`/${product.sku}`)
-          }catch (e){
-            setError(e.toString())
-            setOverlayVisible(false)
+                product.id, product.sku, product.name, product.price, product.brands[0]?.name ?? "", atter, product.short_description, dim, product.weight, product.stock_quantity, product.permalink
+              )
+              console.log(product.id, product.sku, product.name, product.price, product.brands[0]?.name ?? "", atter, product.short_description, dim, product.weight, product.stock_quantity, product.permalink)
+              router.push(`/${product.sku}`)
+            } catch (e) {
+              setError(e.toString())
+              setOverlayVisible(false)
+            }
+          } else {
+            setTimeout(() => setVisible(true), 200)
           }
-        }else{
-          setTimeout(() => setVisible(true), 200)
         }
       }
       else {

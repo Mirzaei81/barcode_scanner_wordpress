@@ -80,7 +80,7 @@ export async function getProductIKEA(sku:Number):Promise<Products|undefined> {
   };
 
   const response = await fetch("https://sik.search.blue.cdtapps.com/ae/en/search", requestOptions)
-  return await response.json()
+  return genrateProduct(await response.text())
 }
 export async function getProductBySKU(Sku: string): Promise<Products|boolean|undefined> {
   let controller = new AbortController()
