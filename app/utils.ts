@@ -255,3 +255,31 @@ export async function getPaymentUri(orderId:string):Promise<uri>{
   const response = await fetch(`https://zardaan.com/wp-json/wc/v3/customers/pec/checkout1/${orderId}`);
   return response.json()
 }
+
+export async function directLogin(){
+  await fetch('https://core.api.panel.direct/v3/user/login', {
+    method: 'POST',
+    headers: {
+      'accept': 'application/json, text/plain, */*',
+      'accept-language': 'en-US,en;q=0.8',
+      'authorization': 'Bearer',
+      'content-type': 'application/json',
+      'origin': 'https://app.panel.direct',
+      'priority': 'u=1, i',
+      'referer': 'https://app.panel.direct/',
+      'sec-ch-ua': '"Brave";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
+      'sec-ch-ua-mobile': '?0',
+      'sec-ch-ua-platform': '"Windows"',
+      'sec-fetch-dest': 'empty',
+      'sec-fetch-mode': 'cors',
+      'sec-fetch-site': 'same-site',
+      'sec-gpc': '1',
+      'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
+    },
+    body: JSON.stringify({
+      'phoneNumber': '00989121575307',
+      'password': 'Ehsan1363'
+    })
+  });
+ 
+}
