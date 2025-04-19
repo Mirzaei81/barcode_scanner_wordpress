@@ -1,5 +1,4 @@
 {
-
   "expo": {
     "name": "BarCodeScanner",
     "slug": "BarCodeScanner",
@@ -15,7 +14,8 @@
       "backgroundColor": "#016bb7"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mthebest81.BarCodeScanner"
     },
     "android": {
       "adaptiveIcon": {
@@ -44,9 +44,7 @@
       [
         "expo-asset",
         {
-          "assets": [
-            // "./assets/images/Title.png"
-          ]
+          "assets": []
         }
       ],
       "expo-secure-store",
