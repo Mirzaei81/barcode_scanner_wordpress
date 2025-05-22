@@ -1,0 +1,5 @@
+ ![Screenshot_2025-05-22-14-14-14-554_host exp exponent 1](https://github.com/user-attachments/assets/47fef360-6527-47f3-9b67-d9c8ba3612ee)
+![Screenshot_2025-05-22-14-10-49-836_host exp exponent 1](https://github.com/user-attachments/assets/c0a056e7-b8ca-48d7-9bc7-43d27edc117b)
+![Screenshot_2025-05-22-14-10-43-428_host exp exponent 1](https://github.com/user-attachments/assets/6f2beea6-896e-43da-b6c1-c21230869bb9)
+![Screenshot_2025-05-22-14-10-23-207_host exp exponent 1](https://github.com/user-attachments/assets/ff984709-922c-4ffd-bd0a-5508b7016d34)
+![Screenshot_2025-05-22-14-09-22-032_host exp exponent 1](https://github.com/user-attachments/assets/9249f6d9-e018-434b-9eb4-f8de8fca63d7)
