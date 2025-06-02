@@ -24,7 +24,6 @@ export default function App() {
         require("../assets/images/logoSecondary.png"),
     ])
     useEffect(() => {
-        
         (async () => {
             setLogined((await getItemAsync("logined") === "true"));
         })()

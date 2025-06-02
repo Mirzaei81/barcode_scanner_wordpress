@@ -38,19 +38,6 @@ export default function App() {
         })()
     }, [])
 
-    useEffect(() => {
-        const id = setInterval(() => {
-            if (timer == 0) {
-                (async()=>setItemAsync("timer","0"))()
-                clearInterval(id)
-            } else if (timer == -1) {
-                setTimer(120)
-            } else {
-                setTimer(timer - 1)
-            }
-        }, 1000)
-        return () => clearInterval(id)
-    }, [timer])
     if (error) {
         return (
             <View><Text>{error.message}</Text></View>
@@ -64,7 +51,7 @@ export default function App() {
     const onSubmit = async () => {
         setLoading(true)
         if(phone.length==10){
-            console.log(await sendOtp(phone))
+            console.log("Sending Otp : ",await sendOtp(phone))
             router.push({pathname:"/otp",params:{phone}})
         }
             
@@ -107,11 +94,6 @@ export default function App() {
                         {loading ? <Button disabled={loading} onTouchStart={onSubmit} style={{ borderRadius: 5 }} textColor="#fefdf4ff" buttonColor="#1c2434ff" mode="contained" ><ActivityIndicator color={Colors.light.secondary} /></Button> :
                             <Button disabled={loading} onTouchStart={onSubmit} style={{ borderRadius: 5 }} textColor="#fefdf4ff" buttonColor="#1c2434ff" mode="contained" >ادامه<AntDesign name="arrowleft" />
                             </Button>
-                        }
-                        {timer > 0 ?
-                            <Text style={{ textAlign: "center", marginTop: 15 }}>
-                                مانده تا دریافت مجدد کد  {String(Math.floor(timer / 60)).padStart(2, "0")}:{String(timer % 60).padEnd(2, "0")}
-                            </Text> : null
                         }
 
                         <View style={{ display: "flex", flexDirection: "row", backgroundColor: "white", marginTop: 20 }}>

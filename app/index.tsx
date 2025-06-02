@@ -74,7 +74,6 @@ export default function Index(){
             }
         })()
     }, [])
-    useEffect(()=>{setLoading(false)},[loading])
     if(e || assets==null){
         return <View><Image source={require("../assets/images/icon.png")} /></View>
     }
@@ -95,6 +94,9 @@ export default function Index(){
                 return
             }
             const products: Product[] = await getProductByName(name)
+            if(products.length == 0){
+                setError("محصولی با این نام یافت نشد")  
+            }
             for (let product of products) {
                 const protectAttr = product.attributes.filter(attr => attr.name.includes("مراقبت"))
                 let atter = null
@@ -127,7 +129,8 @@ export default function Index(){
             let product = products[0]
             if(product==null){
                 console.log("not found")
-                setError("محصول با ان شاسه یافت نشد")
+                setError("محصول با این شناسه یافت نشد")
+                setLoading(false)
                 return;
             }
             const protectAttr = product.attributes.filter(attr => attr.name.includes("مراقبت"))
@@ -154,15 +157,14 @@ export default function Index(){
     
     return (
         <View>
-            {error!=""?<Snackbar onDismiss={()=>setError("")} visible={error!=""}>{error}</Snackbar>:null}
+            {error != "" ? <Portal><Snackbar onDismiss={() => setError("")} visible={error != ""}>{error}</Snackbar></Portal> : null}
             {loading ?
                 <Portal>
-                    <View style={[styles.activity, { backgroundColor: "transparent", vsibility: loading ? "visible" : "hidden" }]}>
+                    <View style={[styles.activity, { backgroundColor: "transparent" }]}>
                         <View style={{ backgroundColor: "white", padding: 34, borderRadius: 36, borderWidth: 1, alignSelf: "center", borderColor: colorSecondary }}>
                             <ActivityIndicator color={colorMain} size={64} />
                             <Text>در حال پردازش</Text>
                         </View>
-
                     </View>
                 </Portal>
                 : null}
@@ -175,10 +177,10 @@ export default function Index(){
                         <Text style={{color:"#f6d33c",position:"absolute",top:430,right:45,fontSize:22}}>شناسه محصول:</Text>
                         <TextInput onChangeText={(e)=>(setSku(e))}  theme={{roundness:20}} style={{position:"absolute",overflow:"hidden",top:420,left:20,borderRadius:20,width:WIDTH*0.5,height:50,backgroundColor:"white"}}></TextInput>
 
-                        <Button labelStyle={[styles.buttonLabel, { color: "white" }]} style={styles.button} onTouchStart={searchProduct}>جست و جو</Button>
+                        <Button labelStyle={[styles.buttonLabel, { color: "white" }]} style={styles.button} onTouchStart={()=>{setLoading(true),searchProduct()}}>جست و جو</Button>
                         <Avatar onTouchStart={()=>router.push("/profile")} width={PixelRatio.getPixelSizeForLayoutSize(45)} height={PixelRatio.getPixelSizeForLayoutSize(45)} style={{position:"absolute",bottom:250,left:235}}/>
                         <ScanMe onTouchStart={() => router.push("/scanner")} width={PixelRatio.getPixelSizeForLayoutSize(88)} height={PixelRatio.getPixelSizeForLayoutSize(56)} style={{position:"absolute",bottom:140,right:150}}/>
-                        <QR  onTouchStart={() => router.push("/cart")} width={PixelRatio.getPixelSizeForLayoutSize(35)} height={PixelRatio.getPixelSizeForLayoutSize(40)} style={{position:"absolute",bottom:130,right:20}} />
+                        <QR width={PixelRatio.getPixelSizeForLayoutSize(35)} height={PixelRatio.getPixelSizeForLayoutSize(40)} style={{ position: "absolute", bottom: 130, right: 20 }} />
                         <View style={styles.footer}>
                             <Text style={[styles.text,{color:"white"}]}>طراحی توسط امیر عرشیا میرزایی</Text>
                             <Text style={[styles.text, { color: colorSecondary }]}>کلیه حقوق این اپلیکیشن متعلق به فروشگاه زردان می باشد</Text>
