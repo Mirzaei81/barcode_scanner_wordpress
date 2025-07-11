@@ -45,6 +45,8 @@ export default function App() {
         (async () => {
             const db = await Sqlite.openDatabaseAsync('Products.db');
             const product: ProductTable = (await db.getFirstAsync("Select * from product where sku = ?", id))!;
+            console.log(await db.getAllAsync(`Select * from product`));
+            console.log(product, "product from db");
             if(product.name =="") {
                 await db.execAsync(`Select * from product where sku = ${id}`)
                 router.push("/scanner")
@@ -55,7 +57,7 @@ export default function App() {
                 try{
                     cartDetail = await db?.getFirstAsync(`select * from cart where  product_id = ?;`,product!.id)
                 }catch(e){
-                    console.log(e,"get last cart value")
+                     console.log(e,"get last cart value")
                 }
                 if (products&&products.length > 0) {
                     const Updatedproduct = products[0];

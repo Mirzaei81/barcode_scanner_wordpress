@@ -117,6 +117,7 @@ export default function Index(){
         }
         else if (sku != "") {
             let dbProduct = await db?.getFirstAsync("select * from product  where sku = ?", sku)
+            console.log(sku)
             if (dbProduct) {
                 router.push(`/${dbProduct.sku}`)
                 return
@@ -129,16 +130,25 @@ export default function Index(){
                 atter = protectAttr[0].options[0]
             }
             const dim = product.dimensions?.length + "x" + product.dimensions?.width + "x" + product.dimensions?.height + "cm"
+            if (!product) {
+                setLoading(false)
+                setError("محصولی با این شناسه یافت نشد")
+                return
+            }
+            console.log(product.id)
             try {
                 await db?.runAsync(`
             insert into product (id,sku,name,price,brand,attrbute,short_desc,dimentions,weight,stock,link) Values (?,?,?,?,?,?,?,?,?,?,?)`,
-                    product.id, product.sku, product.name, product.price, product.brands[0]?.name ?? "", atter, product.short_description, dim, product.weight, product.stock_quantity, product.permalink
+                    product.id, sku, product.name, product.price, product.brands[0]?.name ?? "", atter, product.short_description, dim, product.weight, product.stock_quantity, product.permalink
                 )
+                console.log("Product inserted successfully")
                 setLoading(false)
-                router.push(`/${product.id}`)
             } catch (e) {
+
                 console.log(e)
             }
+            router.push(`/${sku}`)
+
             setLoading(false)
         }
         
