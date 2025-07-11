@@ -276,10 +276,30 @@ export async function directLogin(){
       'sec-gpc': '1',
       'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
     },
-    body: JSON.stringify({
+    body: `{
       'phoneNumber': '00989121575307',
       'password': 'Ehsan1363'
-    })
+    }`
   });
  
+}
+export async function hesabfa(){
+  let url = "https://api.hesabfa.com/v1/invoice/savepayment"
+  let body = {
+    apiKey: 'asdfASR^%FDHdsfg456',
+    userId: 'mail@example.com',
+    password: '123456',
+    loginToken: 'f6b912...45fdc',
+    type: 0,
+    number: 1001,
+    bankCode: '0001',
+    date: '2018-07-17 17:32:11',
+    amount: 109000,
+    transactionNumber: '255496387',
+      project: 'فروشگاه آنلاین',
+      description: 'پرداخت آنلاین',
+    transactionFee: 0
+  } 
+  await fetch(url, { method: "POST", body: JSON.stringify(body) })
+
 }

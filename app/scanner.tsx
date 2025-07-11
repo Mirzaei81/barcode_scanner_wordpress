@@ -9,13 +9,13 @@ import {ActivityIndicator, Portal, Snackbar} from "react-native-paper"
 import {Icon} from "react-native-paper"
 import * as SQLite from 'expo-sqlite';
 
-
 const colorMain = "#016bb7"
 const colorSecondary = "#016bb7"
 const {height:ScreenHeight} = Dimensions.get("window");
 
 export default function App() {
   const [facing, setFacing] = useState<CameraType>('back');
+  const [height,setHeight] = useState()
   const [error,setError] = useState("")
   const [visible,setVisible] = useState(false)
   const [isLoading,setIsLoading] = useState<boolean>(false);
@@ -118,12 +118,15 @@ export default function App() {
   }
 
   return (
-      <View style={styles.container}>
+    <View style={styles.container} onLayout={({ nativeEvent }) => {
+        const windowHeight = nativeEvent.layout.height;
+        setHeight(windowHeight)
+      }}>
       {error != "" ? <Snackbar onDismiss={() => setError("")} visible={error != ""}>{error}</Snackbar> : null}
         <CameraView
           onBarcodeScanned={BarcodeCallback}
           active={!isLoading}
-          style={styles.camera} facing={facing}>
+          style={{justifyContent:"flex-start",height:height}} facing={facing}>
         <Portal>
           {(()=>{
             if (overlayVisible) {
@@ -163,8 +166,6 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   camera: {
-    height:ScreenHeight,
-    justifyContent:"flex-start"
   },
   buttonContainer: {
     flex: 1,
